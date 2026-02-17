@@ -1,0 +1,90 @@
+{
+}
+  ]
+    }
+      ]
+        "http://example.org/themes/BusinessIntelligence"
+        "http://example.org/themes/Compliance",
+        "http://example.org/themes/FraudDetection",
+        "http://example.org/themes/CreditRisk",
+        "http://example.org/themes/IoT",
+        "http://example.org/themes/NetworkSecurity",
+        "http://example.org/themes/SocialMedia",
+        "http://example.org/themes/Ecommerce",
+        "http://example.org/themes/Healthcare",
+        "http://example.org/themes/RealEstate",
+        "http://example.org/themes/CustomerExperience",
+        "http://example.org/themes/Operations",
+        "http://example.org/themes/HumanResources",
+        "http://example.org/themes/Marketing",
+        "http://example.org/themes/FinancialServices",
+        "http://example.org/themes/SupplyChain",
+        "http://example.org/themes/SalesAnalytics",
+        "http://example.org/themes/ProductData",
+        "http://example.org/themes/fibo/MortgageRisk",
+        "http://example.org/themes/CustomerAnalytics",
+      "values": [
+      "type": "enum",
+      "name": "theme_uri",
+    {
+    },
+      ]
+        "ResearchAndDevelopment"
+        "BusinessIntelligence",
+        "DataEngineering",
+        "SecurityOps",
+        "ComplianceTeam",
+        "CustomerInsights",
+        "ITOperations",
+        "HRDepartment",
+        "MarketingAnalytics",
+        "FinanceTeam",
+        "OperationsTeam",
+        "SalesOps",
+        "ProductTeam",
+        "RiskManagement",
+        "DataGovernanceTeam",
+      "values": [
+      "type": "enum",
+      "name": "owner",
+    {
+    },
+      "format": "2023-01-01:2025-12-31"
+      "type": "date",
+      "name": "issued",
+    {
+    },
+      ]
+        "Business Intelligence Dashboard Data"
+        "Regulatory Compliance Data",
+        "Fraud Detection Dataset",
+        "Credit Scoring Models",
+        "IoT Sensor Data Collection",
+        "Network Traffic Analytics",
+        "Social Media Engagement Metrics",
+        "E-commerce Order History",
+        "Healthcare Patient Records",
+        "Real Estate Portfolio Data",
+        "Customer Feedback Analysis",
+        "Inventory Management System",
+        "Employee Performance Data",
+        "Marketing Campaign Analytics",
+        "Financial Transaction Records",
+        "Supply Chain Optimization",
+        "Sales Performance Metrics",
+        "Product Catalog Master",
+        "Mortgage Risk Analysis",
+        "Customer Segmentation Dataset",
+      "values": [
+      "type": "enum",
+      "name": "title",
+    {
+    },
+      "format": "DS"
+      "type": "id",
+      "name": "dataset_id",
+    {
+  "columns": [
+  "seed": 42,
+  "num_rows": 100000,
+

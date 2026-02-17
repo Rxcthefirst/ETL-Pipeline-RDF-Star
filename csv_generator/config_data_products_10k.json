@@ -1,0 +1,89 @@
+{
+  "num_rows": 10000,
+  "seed": 42,
+  "columns": [
+    {
+      "name": "dataset_id",
+      "type": "id",
+      "format": "DS"
+    },
+    {
+      "name": "title",
+      "type": "enum",
+      "values": [
+        "Customer Segmentation Dataset",
+        "Mortgage Risk Analysis",
+        "Product Catalog Master",
+        "Sales Performance Metrics",
+        "Supply Chain Optimization",
+        "Financial Transaction Records",
+        "Marketing Campaign Analytics",
+        "Employee Performance Data",
+        "Inventory Management System",
+        "Customer Feedback Analysis",
+        "Real Estate Portfolio Data",
+        "Healthcare Patient Records",
+        "E-commerce Order History",
+        "Social Media Engagement Metrics",
+        "Network Traffic Analytics",
+        "IoT Sensor Data Collection",
+        "Credit Scoring Models",
+        "Fraud Detection Dataset",
+        "Regulatory Compliance Data",
+        "Business Intelligence Dashboard Data"
+      ]
+    },
+    {
+      "name": "issued",
+      "type": "date",
+      "format": "2023-01-01:2025-12-31"
+    },
+    {
+      "name": "owner",
+      "type": "enum",
+      "values": [
+        "DataGovernanceTeam",
+        "RiskManagement",
+        "ProductTeam",
+        "SalesOps",
+        "OperationsTeam",
+        "FinanceTeam",
+        "MarketingAnalytics",
+        "HRDepartment",
+        "ITOperations",
+        "CustomerInsights",
+        "ComplianceTeam",
+        "SecurityOps",
+        "DataEngineering",
+        "BusinessIntelligence",
+        "ResearchAndDevelopment"
+      ]
+    },
+    {
+      "name": "theme_uri",
+      "type": "enum",
+      "values": [
+        "http://example.org/themes/CustomerAnalytics",
+        "http://example.org/themes/fibo/MortgageRisk",
+        "http://example.org/themes/ProductData",
+        "http://example.org/themes/SalesAnalytics",
+        "http://example.org/themes/SupplyChain",
+        "http://example.org/themes/FinancialServices",
+        "http://example.org/themes/Marketing",
+        "http://example.org/themes/HumanResources",
+        "http://example.org/themes/Operations",
+        "http://example.org/themes/CustomerExperience",
+        "http://example.org/themes/RealEstate",
+        "http://example.org/themes/Healthcare",
+        "http://example.org/themes/Ecommerce",
+        "http://example.org/themes/SocialMedia",
+        "http://example.org/themes/NetworkSecurity",
+        "http://example.org/themes/IoT",
+        "http://example.org/themes/CreditRisk",
+        "http://example.org/themes/FraudDetection",
+        "http://example.org/themes/Compliance",
+        "http://example.org/themes/BusinessIntelligence"
+      ]
+    }
+  ]
+}

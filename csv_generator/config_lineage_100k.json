@@ -1,0 +1,88 @@
+{
+  "num_rows": 100000,
+  "seed": 42,
+  "columns": [
+    {
+      "name": "dataset_id",
+      "type": "id",
+      "format": "DS"
+    },
+    {
+      "name": "source_system",
+      "type": "enum",
+      "values": [
+        "COLLIBRA",
+        "ALATION",
+        "INFORMATICA",
+        "TALEND",
+        "AZURE_PURVIEW",
+        "AWS_GLUE",
+        "DATABRICKS",
+        "SNOWFLAKE",
+        "APACHE_ATLAS",
+        "ERWIN",
+        "IBM_IGC",
+        "SAP_MDG",
+        "ORACLE_EDQ",
+        "ALTERYX",
+        "TABLEAU_CATALOG"
+      ]
+    },
+    {
+      "name": "extract_time",
+      "type": "enum",
+      "values": [
+        "2025-02-15T10:30:00Z",
+        "2025-02-15T10:35:00Z",
+        "2025-02-15T10:40:00Z",
+        "2025-02-15T11:00:00Z",
+        "2025-02-15T11:30:00Z",
+        "2025-02-15T12:00:00Z",
+        "2025-02-15T13:00:00Z",
+        "2025-02-15T14:00:00Z",
+        "2025-02-15T15:00:00Z",
+        "2025-02-15T16:00:00Z"
+      ]
+    },
+    {
+      "name": "run_id",
+      "type": "enum",
+      "values": [
+        "RUN_20250215_001",
+        "RUN_20250215_002",
+        "RUN_20250215_003",
+        "RUN_20250215_004",
+        "RUN_20250215_005",
+        "RUN_20250215_006",
+        "RUN_20250215_007",
+        "RUN_20250215_008",
+        "RUN_20250215_009",
+        "RUN_20250215_010"
+      ]
+    },
+    {
+      "name": "confidence",
+      "type": "float",
+      "min": 0.75,
+      "max": 0.99,
+      "decimals": 2
+    },
+    {
+      "name": "rule_id",
+      "type": "enum",
+      "values": [
+        "RULE_001",
+        "RULE_002",
+        "RULE_003",
+        "RULE_004",
+        "RULE_005",
+        "RULE_006",
+        "RULE_007",
+        "RULE_008",
+        "RULE_009",
+        "RULE_010"
+      ]
+    }
+  ]
+}
+

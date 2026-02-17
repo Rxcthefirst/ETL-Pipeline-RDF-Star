@@ -1,0 +1,29 @@
+<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/loanTerm> "30"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://example.org/mortgage/Loan_001> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/mortgage/MortgageLoan> .
+<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/loanAmount> "350000"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/interestRate> "3.25"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/loanId> "LOAN-001" .
+<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/borrowerName> "John Smith" .
+<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/propertyAddress> "123 Main St, Seattle, WA" .
+<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/loanStatus> "Active" .
+<http://example.org/mortgage/Loan_002> <http://example.org/mortgage/loanTerm> "30"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://example.org/mortgage/Loan_002> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/mortgage/MortgageLoan> .
+<http://example.org/mortgage/Loan_002> <http://example.org/mortgage/loanAmount> "475000"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/mortgage/Loan_002> <http://example.org/mortgage/interestRate> "3.5"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/mortgage/Loan_002> <http://example.org/mortgage/loanId> "LOAN-002" .
+<http://example.org/mortgage/Loan_002> <http://example.org/mortgage/borrowerName> "Jane Doe" .
+<http://example.org/mortgage/Loan_002> <http://example.org/mortgage/propertyAddress> "456 Oak Ave, Portland, OR" .
+<http://example.org/mortgage/Loan_002> <http://example.org/mortgage/loanStatus> "Active" .
+<http://example.org/mortgage/Loan_003> <http://example.org/mortgage/loanTerm> "15"^^<http://www.w3.org/2001/XMLSchema#integer> .
+<http://example.org/mortgage/Loan_003> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/mortgage/MortgageLoan> .
+<http://example.org/mortgage/Loan_003> <http://example.org/mortgage/loanAmount> "625000"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/mortgage/Loan_003> <http://example.org/mortgage/interestRate> "3.75"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<http://example.org/mortgage/Loan_003> <http://example.org/mortgage/loanId> "LOAN-003" .
+<http://example.org/mortgage/Loan_003> <http://example.org/mortgage/borrowerName> "Bob Johnson" .
+<http://example.org/mortgage/Loan_003> <http://example.org/mortgage/propertyAddress> "789 Pine Rd, San Francisco, CA" .
+<http://example.org/mortgage/Loan_003> <http://example.org/mortgage/loanStatus> "Approved" .
+<<<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/loanAmount> "350000"^^<http://www.w3.org/2001/XMLSchema#decimal>>> <http://example.org/mortgage/verifiedDate> "2024-01-15"^^<http://www.w3.org/2001/XMLSchema#date> .
+<<<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/loanAmount> "350000"^^<http://www.w3.org/2001/XMLSchema#decimal>>> <http://example.org/mortgage/confidence> "1"^^<http://www.w3.org/2001/XMLSchema#decimal> .
+<<<http://example.org/mortgage/Loan_001> <http://example.org/mortgage/loanAmount> "350000"^^<http://www.w3.org/2001/XMLSchema#decimal>>> <http://example.org/mortgage/verifiedBy> "System" .
+<<<http://example.org/mortgage/Loan_002> <http://example.org/mortgage/interestRate> "3.5"^^<http://www.w3.org/2001/XMLSchema#decimal>>> <http://example.org/mortgage/lastUpdated> "2024-02-01"^^<http://www.w3.org/2001/XMLSchema#date> .
+<<<http://example.org/mortgage/Loan_002> <http://example.org/mortgage/interestRate> "3.5"^^<http://www.w3.org/2001/XMLSchema#decimal>>> <http://example.org/mortgage/source> "BankingSystem" .

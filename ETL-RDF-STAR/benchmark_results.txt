@@ -1,0 +1,17 @@
+RDF-star ETL Engine Performance Benchmark
+================================================================================
+
+Original Engine (Python loops):
+  Average: 8.8169 seconds
+  Min:     8.7503 seconds
+  Max:     8.9278 seconds
+
+Optimized Engine (Vectorized):
+  Average: 4.0294 seconds
+  Min:     3.9925 seconds
+  Max:     4.0516 seconds
+
+Performance Gain:
+  Speedup:     2.19x
+  Time saved:  4.7875 seconds
+  Improvement: 54.3%

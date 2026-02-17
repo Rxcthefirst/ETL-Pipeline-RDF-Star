@@ -1,0 +1,6 @@
+﻿dataset_id,title,issued,owner,theme_uri
+DS001,Customer Segmentation Dataset,2025-01-15,DataGovernanceTeam,http://example.org/themes/CustomerAnalytics
+DS002,Mortgage Risk Analysis,2025-02-10,RiskManagement,http://example.org/themes/fibo/MortgageRisk
+DS003,Product Catalog Master,2025-03-01,ProductTeam,http://example.org/themes/ProductData
+DS004,Sales Performance Metrics,2024-12-20,SalesOps,http://example.org/themes/SalesAnalytics
+DS005,Supply Chain Optimization,2025-01-25,OperationsTeam,http://example.org/themes/SupplyChain

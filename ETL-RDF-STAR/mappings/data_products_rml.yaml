@@ -1,0 +1,73 @@
+prefixes:
+  ex:   "http://example.org/"
+  dcat: "http://www.w3.org/ns/dcat#"
+  dct:  "http://purl.org/dc/terms/"
+  prov: "http://www.w3.org/ns/prov#"
+  xsd:  "http://www.w3.org/2001/XMLSchema#"
+
+mappings:
+
+  # 1) Base DCAT-ish dataset description (asserted triples)
+  datasetTM:
+    sources:
+      - ['data_products_10k.csv~csv']
+    subject: ex:dataset/$(dataset_id)
+    predicateobjects:
+      - [a, dcat:Dataset]
+      - [dct:title, $(title), xsd:string]
+      - [dct:issued, $(issued), xsd:date]
+      - [dct:publisher, ex:org/$(owner)~iri]
+
+  # 2) The specific "fact" we want to govern (inner triples map)
+  #    This produces:  ex:dataset/<id> dcat:theme <theme_uri> .
+  datasetThemeTM:
+    sources:
+      - ['data_products_10k.csv~csv']
+    subject: ex:dataset/$(dataset_id)
+    predicateobjects:
+      - predicates: dcat:theme
+        objects:
+          value: $(theme_uri)
+          type: iri
+
+  # 3) Provenance + quality metadata ABOUT that fact (outer triples map)
+  #    This produces RDF-star like:
+  #    << ex:dataset/X dcat:theme ex:fibo/MortgageRisk >> prov:wasDerivedFrom ex:system/COLLIBRA ; ...
+  themeGovernanceTM:
+    sources:
+      - ['lineage_10k.csv~csv']
+    subject:
+      - function: join(quoted=datasetThemeTM, equal(str1=$(dataset_id), str2=$(dataset_id)))
+    predicateobjects:
+      - predicates: prov:wasDerivedFrom
+        objects:
+          value: ex:system/$(source_system)
+          type: iri
+      - predicates: prov:generatedAtTime
+        objects:
+          value: $(extract_time)
+          datatype: xsd:dateTime
+      - predicates: prov:wasGeneratedBy
+        objects:
+          value: ex:activity/$(run_id)
+          type: iri
+
+      # lightweight "quality" fields attached to the statement itself
+      - [ex:confidence, $(confidence), xsd:decimal]
+      - predicates: ex:rule
+        objects:
+          value: ex:rule/$(rule_id)
+          type: iri
+
+  # 4) Activity node (PROV-O) for the ingest/run (asserted triples)
+  ingestActivityTM:
+    sources:
+      - ['lineage_10k.csv~csv']
+    subject: ex:activity/$(run_id)
+    predicateobjects:
+      - [a, prov:Activity]
+      - [prov:startedAtTime, $(extract_time), xsd:dateTime]
+      - predicates: prov:used
+        objects:
+          value: ex:system/$(source_system)
+          type: iri

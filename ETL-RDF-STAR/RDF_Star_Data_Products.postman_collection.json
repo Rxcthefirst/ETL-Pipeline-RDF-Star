@@ -1,0 +1,588 @@
+{
+	"info": {
+		"name": "RDF-star Data Products - Governance & Provenance",
+		"description": "Comprehensive test suite demonstrating the power of RDF-star with reified statements for data governance, provenance tracking, and quality metrics.\n\nThis collection showcases:\n- Statement-level metadata queries\n- Provenance tracking across source systems\n- Data quality monitoring with confidence scores\n- Temporal analysis and audit trails\n- Ontology alignment and reasoning\n- Complex governance queries\n\nServer: http://localhost:7878/sparql",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Basic Queries",
+			"description": "Simple queries to verify data loading and explore the graph",
+			"item": [
+				{
+					"name": "1.1 Count All Datasets",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\n\nSELECT (COUNT(?dataset) as ?count)\nWHERE {\n    ?dataset a dcat:Dataset .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 List First 10 Datasets",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\n\nSELECT ?dataset ?title ?issued\nWHERE {\n    ?dataset a dcat:Dataset ;\n             dct:title ?title ;\n             dct:issued ?issued .\n}\nORDER BY ?dataset\nLIMIT 10"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1.3 Count All Activities",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT (COUNT(DISTINCT ?activity) as ?count)\nWHERE {\n    ?activity a prov:Activity .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. RDF-star Provenance Queries",
+			"description": "Demonstrate RDF-star queries for provenance tracking at the statement level",
+			"item": [
+				{
+					"name": "2.1 Find High-Confidence Theme Assignments",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?dataset ?title ?theme ?confidence ?source\nWHERE {\n    # Base triple\n    ?dataset dcat:theme ?theme ;\n             dct:title ?title .\n    \n    # RDF-star: Get metadata about the theme assignment\n    <<?dataset dcat:theme ?theme>> ex:confidence ?confidence ;\n                                    prov:wasDerivedFrom ?source .\n    \n    FILTER(?confidence > 0.90)\n}\nORDER BY DESC(?confidence)\nLIMIT 20"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.2 Track Data by Source System",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?source (COUNT(DISTINCT ?dataset) as ?datasetCount)\nWHERE {\n    ?dataset dcat:theme ?theme .\n    \n    # RDF-star: Get source from statement annotation\n    <<?dataset dcat:theme ?theme>> prov:wasDerivedFrom ?source .\n}\nGROUP BY ?source\nORDER BY DESC(?datasetCount)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.3 Complete Provenance Chain for Dataset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?predicate ?value ?source ?timestamp ?activity ?rule\nWHERE {\n    # Specific dataset (change ID as needed)\n    BIND(<http://example.org/dataset/DS-000001> as ?dataset)\n    \n    ?dataset ?predicate ?value .\n    FILTER(?predicate != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>)\n    \n    # RDF-star: Get all provenance metadata\n    <<?dataset ?predicate ?value>> prov:wasDerivedFrom ?source ;\n                                    prov:generatedAtTime ?timestamp ;\n                                    prov:wasGeneratedBy ?activity ;\n                                    ex:rule ?rule .\n}\nORDER BY ?predicate"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Data Quality & Governance",
+			"description": "Queries demonstrating quality metrics and governance using RDF-star",
+			"item": [
+				{
+					"name": "3.1 Find Low Confidence Data",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?dataset ?title ?theme ?confidence ?source\nWHERE {\n    ?dataset dcat:theme ?theme ;\n             dct:title ?title .\n    \n    # RDF-star: Get confidence score\n    <<?dataset dcat:theme ?theme>> ex:confidence ?confidence ;\n                                    prov:wasDerivedFrom ?source .\n    \n    FILTER(?confidence < 0.85)\n}\nORDER BY ?confidence\nLIMIT 20"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.2 Governance Rules Applied",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\n\nSELECT ?rule (COUNT(?dataset) as ?applicationsCount)\nWHERE {\n    ?dataset dcat:theme ?theme .\n    \n    # RDF-star: Get governance rule\n    <<?dataset dcat:theme ?theme>> ex:rule ?rule .\n}\nGROUP BY ?rule\nORDER BY DESC(?applicationsCount)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.3 Average Confidence by Source System",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?source (COUNT(?dataset) as ?count) (AVG(?confidence) as ?avgConf) (MIN(?confidence) as ?minConf) (MAX(?confidence) as ?maxConf)\nWHERE {\n    ?dataset dcat:theme ?theme .\n    \n    <<?dataset dcat:theme ?theme>> prov:wasDerivedFrom ?source ;\n                                    ex:confidence ?confidence .\n}\nGROUP BY ?source\nORDER BY DESC(?avgConf)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Temporal & Freshness Queries",
+			"description": "Time-based queries using RDF-star temporal metadata",
+			"item": [
+				{
+					"name": "4.1 Most Recently Updated Datasets",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?dataset ?title ?theme ?lastUpdated ?source\nWHERE {\n    ?dataset dcat:theme ?theme ;\n             dct:title ?title .\n    \n    # RDF-star: Get generation time\n    <<?dataset dcat:theme ?theme>> prov:generatedAtTime ?lastUpdated ;\n                                    prov:wasDerivedFrom ?source .\n}\nORDER BY DESC(?lastUpdated)\nLIMIT 20"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.2 Datasets Updated in Time Range",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX prov: <http://www.w3.org/ns/prov#>\nPREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nSELECT ?dataset ?title ?lastUpdated\nWHERE {\n    ?dataset dcat:theme ?theme ;\n             dct:title ?title .\n    \n    <<?dataset dcat:theme ?theme>> prov:generatedAtTime ?lastUpdated .\n    \n    # Filter by time range (adjust as needed)\n    FILTER(?lastUpdated >= \"2025-02-15T14:00:00Z\"^^xsd:dateTime)\n}\nORDER BY DESC(?lastUpdated)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.3 Data Freshness by Theme",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?theme (COUNT(?dataset) as ?datasetCount) (MAX(?updated) as ?mostRecent)\nWHERE {\n    ?dataset dcat:theme ?theme .\n    \n    <<?dataset dcat:theme ?theme>> prov:generatedAtTime ?updated .\n}\nGROUP BY ?theme\nORDER BY DESC(?mostRecent)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Ontology Alignment Queries",
+			"description": "Queries demonstrating ontology integration and reasoning",
+			"item": [
+				{
+					"name": "5.1 List All Classes in Ontology",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX owl: <http://www.w3.org/2002/07/owl#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT DISTINCT ?class ?label ?comment\nWHERE {\n    ?class a owl:Class .\n    OPTIONAL { ?class rdfs:label ?label }\n    OPTIONAL { ?class rdfs:comment ?comment }\n}\nORDER BY ?class"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.2 List All Object Properties",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX owl: <http://www.w3.org/2002/07/owl#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT DISTINCT ?property ?label ?domain ?range\nWHERE {\n    ?property a owl:ObjectProperty .\n    OPTIONAL { ?property rdfs:label ?label }\n    OPTIONAL { ?property rdfs:domain ?domain }\n    OPTIONAL { ?property rdfs:range ?range }\n}\nORDER BY ?property"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.3 Find All Data Catalog Systems (Named Individuals)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/ontology#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT ?system ?label ?comment\nWHERE {\n    ?system a ex:DataCatalogSystem .\n    OPTIONAL { ?system rdfs:label ?label }\n    OPTIONAL { ?system rdfs:comment ?comment }\n}\nORDER BY ?label"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.4 Verify Instance-Ontology Alignment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX prov: <http://www.w3.org/ns/prov#>\nPREFIX ex: <http://example.org/ontology#>\n\nSELECT ?type (COUNT(?instance) as ?instanceCount)\nWHERE {\n    ?instance a ?type .\n    # Only count types from our ontologies\n    FILTER(STRSTARTS(STR(?type), \"http://www.w3.org/ns/dcat#\") || \n           STRSTARTS(STR(?type), \"http://www.w3.org/ns/prov#\") ||\n           STRSTARTS(STR(?type), \"http://example.org/ontology#\"))\n}\nGROUP BY ?type\nORDER BY DESC(?instanceCount)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. Complex Multi-faceted Queries",
+			"description": "Advanced queries combining ontology, provenance, quality, and temporal aspects",
+			"item": [
+				{
+					"name": "6.1 Trusted Data from Specific System",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?dataset ?title ?theme ?confidence ?timestamp\nWHERE {\n    ?dataset dcat:theme ?theme ;\n             dct:title ?title .\n    \n    # RDF-star: Complex filter on metadata\n    <<?dataset dcat:theme ?theme>> \n        prov:wasDerivedFrom <http://example.org/system/COLLIBRA> ;\n        ex:confidence ?confidence ;\n        prov:generatedAtTime ?timestamp .\n    \n    FILTER(?confidence > 0.92)\n}\nORDER BY DESC(?confidence) DESC(?timestamp)\nLIMIT 20"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6.2 Cross-System Comparison",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?source1 ?source2 (COUNT(?dataset) as ?sharedDatasets) \nWHERE {\n    # Same dataset has data from two different sources\n    ?dataset dcat:theme ?theme1 ;\n             dcat:theme ?theme2 .\n    \n    <<?dataset dcat:theme ?theme1>> prov:wasDerivedFrom ?source1 .\n    <<?dataset dcat:theme ?theme2>> prov:wasDerivedFrom ?source2 .\n    \n    FILTER(?source1 != ?source2)\n    FILTER(STR(?source1) < STR(?source2))  # Avoid duplicates\n}\nGROUP BY ?source1 ?source2\nORDER BY DESC(?sharedDatasets)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6.3 Quality Trend Analysis",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?activity (COUNT(?dataset) as ?datasetCount) (AVG(?confidence) as ?avgQuality)\nWHERE {\n    ?dataset dcat:theme ?theme .\n    \n    <<?dataset dcat:theme ?theme>> ex:confidence ?confidence ;\n                                    prov:wasGeneratedBy ?activity .\n}\nGROUP BY ?activity\nORDER BY ?activity"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6.4 Complete Governance Report for Theme",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dct: <http://purl.org/dc/terms/>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\nSELECT ?dataset ?title ?source ?confidence ?rule ?timestamp\nWHERE {\n    # Focus on specific theme (change URI as needed)\n    BIND(<http://example.org/themes/CustomerAnalytics> as ?targetTheme)\n    \n    ?dataset dcat:theme ?targetTheme ;\n             dct:title ?title .\n    \n    # RDF-star: Get all governance metadata\n    <<?dataset dcat:theme ?targetTheme>> \n        prov:wasDerivedFrom ?source ;\n        ex:confidence ?confidence ;\n        ex:rule ?rule ;\n        prov:generatedAtTime ?timestamp .\n}\nORDER BY DESC(?confidence) DESC(?timestamp)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "7. Reification Comparison",
+			"description": "Queries demonstrating why RDF-star is better than traditional reification",
+			"item": [
+				{
+					"name": "7.1 RDF-star Direct Query (Simple)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX ex: <http://example.org/>\nPREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX prov: <http://www.w3.org/ns/prov#>\n\n# RDF-star approach: Direct and intuitive\nSELECT ?dataset ?theme ?source ?confidence\nWHERE {\n    ?dataset dcat:theme ?theme .\n    \n    # Simple: Query metadata directly on the statement\n    <<?dataset dcat:theme ?theme>> prov:wasDerivedFrom ?source ;\n                                    ex:confidence ?confidence .\n}\nLIMIT 10"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7.2 Count Reified Statements",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n\n# Count how many statements have RDF-star annotations\nSELECT (COUNT(?reifier) as ?reifiedStatements)\nWHERE {\n    ?reifier rdf:reifies ?triple .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "8. Health & Statistics",
+			"description": "Endpoint health checks and store statistics",
+			"item": [
+				{
+					"name": "8.1 Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8.2 Store Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/stats",
+							"host": ["{{base_url}}"],
+							"path": ["stats"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "8.3 Home Page (HTML)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:7878",
+			"type": "default"
+		}
+	]
+}
+

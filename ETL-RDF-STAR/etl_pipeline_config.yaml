@@ -1,0 +1,18 @@
+# Example ETL Pipeline configuration for RML-star/YARRRML-star to RDF-star
+# Users can modify this YAML to point to their own data, mappings, and output
+
+pipeline:
+  input_csv: "data/data_products_10k.csv"  # Path to the input CSV file (not used in dynamic mode)
+  mapping_file: "mappings/data_products_rml.yaml"  # Path to the RML-star/YARRRML-star mapping file
+  data_directory: "benchmark_data"  # Base directory for CSV files referenced in mappings
+  output_rdfstar: "output/output_data_star.trig"  # Path to the output RDF-star file
+  rdf_format: "TRIG"  # RDF serialization format (e.g., turtle, trig)
+  provenance:
+    enable: true  # Whether to include provenance information in the output
+    default_confidence: 0.9  # Default confidence score for generated RDF triples
+    generated_at_column: "CreatedOn"  # Column in the CSV that contains the timestamp for when the data was created"
+    derived_from_column: "SourceID"  # Column in the CSV that contains the identifier for the source of the data
+  pyoxigraph_db: "pyoxigraph_db"  # Path to the PyOxigraph database for storing intermediate RDF data
+  logging:
+    level: "INFO"  # Logging level (e.g., DEBUG, INFO, WARNING, ERROR)
+    log_file: "logs/pipeline.log"  # Path to the log file
