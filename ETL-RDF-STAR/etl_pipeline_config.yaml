@@ -1,6 +1,29 @@
-# Example ETL Pipeline configuration for RML-star/YARRRML-star to RDF-star
-# Users can modify this YAML to point to their own data, mappings, and output
+# =============================================================================
+# DEPRECATED - This configuration file is no longer required
+# =============================================================================
+#
+# The new YARRRML-direct ETL engine processes mapping files directly without
+# needing a separate configuration file. All configuration is derived from
+# the YARRRML specification:
+#
+# - Sources: Defined in YARRRML mappings
+# - Targets: Defined in YARRRML targets section
+# - Prefixes: Defined in YARRRML prefixes section
+# - Output: Derived from targets or command line
+#
+# NEW USAGE:
+#   python rdf_star_etl_yarrrml.py <mapping_file.yaml> [output_file.trig]
+#
+# EXAMPLES:
+#   python rdf_star_etl_yarrrml.py mappings/data_products_rml.yaml
+#   python rdf_star_etl_yarrrml.py mappings/my_mapping.yaml output/result.trig
+#
+# The old engine (rdf_star_etl_engine_optimized.py) still works with this
+# config file for backward compatibility.
+#
+# =============================================================================
 
+# Legacy configuration (kept for backward compatibility)
 pipeline:
   input_csv: "data/data_products_10k.csv"  # Path to the input CSV file (not used in dynamic mode)
   mapping_file: "mappings/data_products_rml.yaml"  # Path to the RML-star/YARRRML-star mapping file

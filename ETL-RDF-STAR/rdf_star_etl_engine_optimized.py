@@ -101,6 +101,15 @@ def sanitize_uri_component(value: Any) -> str:
     return sanitize_uri_component_cached(str(value))
 
 
+def create_quad_with_graph(subject, predicate, obj, graph_uri: Optional[str], prefixes: Dict[str, str]) -> Quad:
+    """Create a Quad with optional named graph"""
+    if graph_uri:
+        graph_full_uri = expand_uri(graph_uri, prefixes)
+        return Quad(subject, predicate, obj, NamedNode(graph_full_uri))
+    else:
+        return Quad(subject, predicate, obj)
+
+
 @lru_cache(maxsize=1000)
 def expand_uri_cached(uri_template: str, prefixes_tuple: Tuple) -> str:
     """Cached version of URI expansion"""
@@ -235,6 +244,11 @@ class RDFStarETLEngineOptimized:
         quads_batch = []
         triples_for_cache = []
 
+        # Determine graph for mapping-level
+        mapping_graph = tm.graphs[0] if tm.graphs else None
+        subject_graph = tm.subject.graphs[0] if tm.subject.graphs else None
+        default_graph = mapping_graph or subject_graph
+
         for type_uri in tm.type_statements:
             type_full_uri = expand_uri(type_uri, self.prefixes)
             type_node = NamedNode(type_full_uri)
@@ -243,7 +257,10 @@ class RDFStarETLEngineOptimized:
             for i in range(df.height):
                 subject = NamedNode(subject_uris[i])
                 triple = Triple(subject, rdf_type_node, type_node)
-                quads_batch.append(Quad(subject, rdf_type_node, type_node))
+
+                # Create quad with graph if specified
+                quad = create_quad_with_graph(subject, rdf_type_node, type_node, default_graph, self.prefixes)
+                quads_batch.append(quad)
 
                 # Store for caching
                 triples_for_cache.append({
@@ -255,6 +272,9 @@ class RDFStarETLEngineOptimized:
         for po in tm.predicate_objects:
             predicate_uri = expand_uri(po.predicate, self.prefixes)
             predicate = NamedNode(predicate_uri)
+
+            # Determine graph for this predicate-object (PO graph > default graph)
+            po_graph = po.graphs[0] if po.graphs else default_graph
 
             # Check if object is IRI with direct column reference
             if po.object_type == "iri" and po.value.strip().startswith('$(') and po.value.strip().endswith(')'):
@@ -275,7 +295,8 @@ class RDFStarETLEngineOptimized:
                             obj = NamedNode(obj_uri)
 
                         triple = Triple(subject, predicate, obj)
-                        quads_batch.append(Quad(subject, predicate, obj))
+                        quad = create_quad_with_graph(subject, predicate, obj, po_graph, self.prefixes)
+                        quads_batch.append(quad)
                         triples_for_cache.append({
                             'row_idx': i,
                             'triple': triple
@@ -293,11 +314,15 @@ class RDFStarETLEngineOptimized:
                         if po.datatype:
                             datatype_uri = expand_uri(po.datatype, self.prefixes)
                             obj = Literal(value, datatype=NamedNode(datatype_uri))
+                        elif po.language:
+                            # Handle language tags
+                            obj = Literal(value, language=po.language)
                         else:
                             obj = Literal(value)
 
                         triple = Triple(subject, predicate, obj)
-                        quads_batch.append(Quad(subject, predicate, obj))
+                        quad = create_quad_with_graph(subject, predicate, obj, po_graph, self.prefixes)
+                        quads_batch.append(quad)
                         triples_for_cache.append({
                             'row_idx': i,
                             'triple': triple
@@ -311,7 +336,8 @@ class RDFStarETLEngineOptimized:
                         obj = NamedNode(obj_uris[i])
 
                         triple = Triple(subject, predicate, obj)
-                        quads_batch.append(Quad(subject, predicate, obj))
+                        quad = create_quad_with_graph(subject, predicate, obj, po_graph, self.prefixes)
+                        quads_batch.append(quad)
                         triples_for_cache.append({
                             'row_idx': i,
                             'triple': triple

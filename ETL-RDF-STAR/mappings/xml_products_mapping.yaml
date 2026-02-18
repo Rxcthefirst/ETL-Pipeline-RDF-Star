@@ -1,0 +1,71 @@
+# =============================================================================
+# YARRRML Mapping for XML Data with XPath
+# =============================================================================
+# This mapping demonstrates processing XML files using XPath expressions
+# to extract data from elements and attributes.
+#
+# Data source: sample_data/products.xml
+# Output: RDF graph of products with categories and pricing
+# =============================================================================
+
+prefixes:
+  ex: "http://example.org/"
+  schema: "http://schema.org/"
+  gr: "http://purl.org/goodrelations/v1#"
+  xsd: "http://www.w3.org/2001/XMLSchema#"
+
+# Define output target
+targets:
+  output:
+    access: output/products_from_xml.trig
+    serialization: trig
+
+# Mappings
+mappings:
+
+  # Map each product
+  productMapping:
+    sources:
+      - access: sample_data/products.xml
+        referenceFormulation: xpath
+        iterator: //product
+    subjects: ex:product/$(id)
+    predicateobjects:
+      # Type
+      - [a, schema:Product]
+      - [a, gr:ProductOrService]
+
+      # Properties from child elements
+      - [schema:name, $(name)]
+      - [schema:description, $(description)]
+      - [schema:manufacturer, $(manufacturer)]
+
+      # Price with datatype
+      - predicates: schema:price
+        objects:
+          value: $(price)
+          datatype: xsd:decimal
+
+      # Stock as integer
+      - predicates: schema:inventoryLevel
+        objects:
+          value: $(stock)
+          datatype: xsd:integer
+
+      # Category (from attribute)
+      - predicates: schema:category
+        objects:
+          value: ex:category/$(category)
+          type: iri
+
+  # Map categories
+  categoryMapping:
+    sources:
+      - access: sample_data/products.xml
+        referenceFormulation: xpath
+        iterator: //product
+    subjects: ex:category/$(category)
+    predicateobjects:
+      - [a, schema:Category]
+      - [rdfs:label, $(category)]
+

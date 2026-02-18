@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-02-17T22:03:00.088661+00:00",
+  "batches": [
+    {
+      "batch_id": "batch_0001_20260217_220232",
+      "batch_number": 1,
+      "created_at": "2026-02-17T22:02:32.477927+00:00",
+      "graph_uri": "http://example.org/batch/batch_0001_20260217_220232",
+      "source_mapping": "mappings/data_products_rml.yaml",
+      "source_files": [
+        "data_products_10k.csv",
+        "lineage_10k.csv"
+      ],
+      "status": "superseded",
+      "triple_count": 0,
+      "quad_count": 350264,
+      "loaded_at": "2026-02-17T22:02:38.451475+00:00",
+      "superseded_at": "2026-02-17T22:03:00.088661+00:00",
+      "superseded_by": "batch_0002_20260217_220253",
+      "description": "Test batch 1",
+      "tags": [
+        "test",
+        "daily"
+      ],
+      "checksum": "1dea7aa7b97b4e4423a60408d211c683461ef7adc0075c8d98db604a56f99692"
+    },
+    {
+      "batch_id": "batch_0002_20260217_220253",
+      "batch_number": 2,
+      "created_at": "2026-02-17T22:02:53.777553+00:00",
+      "graph_uri": "http://example.org/batch/batch_0002_20260217_220253",
+      "source_mapping": "mappings/data_products_rml.yaml",
+      "source_files": [
+        "data_products_10k.csv",
+        "lineage_10k.csv"
+      ],
+      "status": "active",
+      "triple_count": 0,
+      "quad_count": 350264,
+      "loaded_at": "2026-02-17T22:03:00.088661+00:00",
+      "superseded_at": null,
+      "superseded_by": null,
+      "description": "Test batch 2",
+      "tags": [
+        "test",
+        "daily"
+      ],
+      "checksum": "988889ee985885652b1b79f1c273cbbca90efbdaef102cbd126e12e0604f2b34"
+    }
+  ]
+}

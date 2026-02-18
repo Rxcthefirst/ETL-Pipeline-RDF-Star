@@ -1,0 +1,699 @@
+# =============================================================================
+# SPARQL Query Library for Temporal Knowledge Graph Management
+# =============================================================================
+#
+# This file contains reusable SPARQL queries for batch management,
+# temporal queries, and provenance tracking on Neptune or any SPARQL 1.1
+# triplestore.
+#
+# Usage: Copy queries and replace $PARAMETERS with actual values
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# PREFIXES (include at the top of every query)
+# -----------------------------------------------------------------------------
+
+PREFIX batch: <http://example.org/batch/>
+PREFIX meta:  <http://example.org/graph/metadata>
+PREFIX ex:    <http://example.org/>
+PREFIX rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:   <http://www.w3.org/2001/XMLSchema#>
+PREFIX prov:  <http://www.w3.org/ns/prov#>
+PREFIX dct:   <http://purl.org/dc/terms/>
+PREFIX schema: <http://schema.org/>
+
+
+# =============================================================================
+# BATCH MANAGEMENT QUERIES
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# CREATE_BATCH: Register a new batch in metadata
+# Parameters: $BATCH_URI, $BATCH_NUMBER, $TIMESTAMP, $DESCRIPTION
+# -----------------------------------------------------------------------------
+
+INSERT DATA {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI
+            a                   ex:Batch ;
+            ex:batchNumber      $BATCH_NUMBER ;
+            ex:status           ex:BatchStatus/pending ;
+            dct:created         "$TIMESTAMP"^^xsd:dateTime ;
+            dct:description     "$DESCRIPTION" .
+    }
+}
+
+
+# -----------------------------------------------------------------------------
+# ACTIVATE_BATCH: Mark a batch as active and supersede previous
+# Parameters: $BATCH_URI, $TIMESTAMP
+# -----------------------------------------------------------------------------
+
+# Step 1: Supersede old active batch
+DELETE {
+    GRAPH <http://example.org/graph/metadata> {
+        ?oldBatch ex:status ex:BatchStatus/active .
+    }
+}
+INSERT {
+    GRAPH <http://example.org/graph/metadata> {
+        ?oldBatch ex:status ex:BatchStatus/superseded ;
+                  ex:supersededAt "$TIMESTAMP"^^xsd:dateTime ;
+                  ex:supersededBy $BATCH_URI .
+    }
+}
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        ?oldBatch a ex:Batch ;
+                  ex:status ex:BatchStatus/active .
+        FILTER(?oldBatch != $BATCH_URI)
+    }
+};
+
+# Step 2: Activate new batch
+DELETE {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:status ex:BatchStatus/pending .
+    }
+}
+INSERT {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:status ex:BatchStatus/active ;
+                   ex:loadedAt "$TIMESTAMP"^^xsd:dateTime .
+    }
+}
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:status ex:BatchStatus/pending .
+    }
+}
+
+
+# -----------------------------------------------------------------------------
+# GET_ACTIVE_BATCH: Get the currently active batch
+# -----------------------------------------------------------------------------
+
+SELECT ?batch ?batchNumber ?created ?description ?quadCount
+FROM <http://example.org/graph/metadata>
+WHERE {
+    ?batch a ex:Batch ;
+           ex:status ex:BatchStatus/active ;
+           ex:batchNumber ?batchNumber ;
+           dct:created ?created .
+    OPTIONAL { ?batch dct:description ?description }
+    OPTIONAL { ?batch ex:quadCount ?quadCount }
+}
+
+
+# -----------------------------------------------------------------------------
+# LIST_BATCHES: List all batches with their status
+# Parameters: $LIMIT (default 20)
+# -----------------------------------------------------------------------------
+
+SELECT ?batch ?batchNumber ?status ?created ?loadedAt ?quadCount ?supersededBy
+FROM <http://example.org/graph/metadata>
+WHERE {
+    ?batch a ex:Batch ;
+           ex:batchNumber ?batchNumber ;
+           ex:status ?status ;
+           dct:created ?created .
+    OPTIONAL { ?batch ex:loadedAt ?loadedAt }
+    OPTIONAL { ?batch ex:quadCount ?quadCount }
+    OPTIONAL { ?batch ex:supersededBy ?supersededBy }
+}
+ORDER BY DESC(?batchNumber)
+LIMIT $LIMIT
+
+
+# -----------------------------------------------------------------------------
+# LIST_BATCHES_BY_STATUS: List batches with specific status
+# Parameters: $STATUS (active, superseded, archived, deleted)
+# -----------------------------------------------------------------------------
+
+SELECT ?batch ?batchNumber ?created ?loadedAt
+FROM <http://example.org/graph/metadata>
+WHERE {
+    ?batch a ex:Batch ;
+           ex:status ex:BatchStatus/$STATUS ;
+           ex:batchNumber ?batchNumber ;
+           dct:created ?created .
+    OPTIONAL { ?batch ex:loadedAt ?loadedAt }
+}
+ORDER BY DESC(?batchNumber)
+
+
+# -----------------------------------------------------------------------------
+# UPDATE_BATCH_QUAD_COUNT: Update quad count after loading
+# Parameters: $BATCH_URI, $QUAD_COUNT
+# -----------------------------------------------------------------------------
+
+DELETE {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:quadCount ?oldCount .
+    }
+}
+INSERT {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:quadCount $QUAD_COUNT .
+    }
+}
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI a ex:Batch .
+        OPTIONAL { $BATCH_URI ex:quadCount ?oldCount }
+    }
+}
+
+
+# -----------------------------------------------------------------------------
+# ARCHIVE_BATCH: Archive a superseded batch
+# Parameters: $BATCH_URI, $TIMESTAMP
+# -----------------------------------------------------------------------------
+
+DELETE {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:status ex:BatchStatus/superseded .
+    }
+}
+INSERT {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:status ex:BatchStatus/archived ;
+                   ex:archivedAt "$TIMESTAMP"^^xsd:dateTime .
+    }
+}
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:status ex:BatchStatus/superseded .
+    }
+}
+
+
+# -----------------------------------------------------------------------------
+# DELETE_BATCH_SOFT: Mark batch as deleted (keep metadata)
+# Parameters: $BATCH_URI, $TIMESTAMP
+# -----------------------------------------------------------------------------
+
+DELETE {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:status ?oldStatus .
+    }
+}
+INSERT {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:status ex:BatchStatus/deleted ;
+                   ex:deletedAt "$TIMESTAMP"^^xsd:dateTime .
+    }
+}
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        $BATCH_URI ex:status ?oldStatus .
+        FILTER(?oldStatus != ex:BatchStatus/active)
+    }
+}
+
+
+# -----------------------------------------------------------------------------
+# DELETE_BATCH_HARD: Delete batch data graph
+# Parameters: $BATCH_URI
+# -----------------------------------------------------------------------------
+
+DROP GRAPH $BATCH_URI
+
+
+# =============================================================================
+# POINT-IN-TIME QUERIES
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# FIND_BATCH_AT_TIME: Find which batch was active at a given time
+# Parameters: $TARGET_DATETIME
+# -----------------------------------------------------------------------------
+
+SELECT ?batch ?batchNumber ?loadedAt
+FROM <http://example.org/graph/metadata>
+WHERE {
+    ?batch a ex:Batch ;
+           ex:batchNumber ?batchNumber ;
+           ex:loadedAt ?loadedAt .
+
+    FILTER(?loadedAt <= "$TARGET_DATETIME"^^xsd:dateTime)
+
+    OPTIONAL { ?batch ex:supersededAt ?supersededAt }
+    FILTER(!BOUND(?supersededAt) || ?supersededAt > "$TARGET_DATETIME"^^xsd:dateTime)
+}
+ORDER BY DESC(?loadedAt)
+LIMIT 1
+
+
+# -----------------------------------------------------------------------------
+# QUERY_SUBJECT_AT_TIME: Get all facts about a subject at a point in time
+# Parameters: $SUBJECT_URI, $TARGET_DATETIME
+# -----------------------------------------------------------------------------
+
+SELECT ?predicate ?object ?batchNumber ?batchDate
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        ?batch a ex:Batch ;
+               ex:batchNumber ?batchNumber ;
+               dct:created ?batchDate ;
+               ex:loadedAt ?loadedAt .
+        FILTER(?loadedAt <= "$TARGET_DATETIME"^^xsd:dateTime)
+        OPTIONAL { ?batch ex:supersededAt ?supersededAt }
+        FILTER(!BOUND(?supersededAt) || ?supersededAt > "$TARGET_DATETIME"^^xsd:dateTime)
+    }
+    GRAPH ?batch {
+        <$SUBJECT_URI> ?predicate ?object .
+    }
+}
+ORDER BY ?predicate
+
+
+# -----------------------------------------------------------------------------
+# QUERY_SUBJECT_AT_BATCH: Get all facts about a subject in a specific batch
+# Parameters: $SUBJECT_URI, $BATCH_URI
+# -----------------------------------------------------------------------------
+
+SELECT ?predicate ?object
+FROM $BATCH_URI
+WHERE {
+    <$SUBJECT_URI> ?predicate ?object .
+}
+ORDER BY ?predicate
+
+
+# =============================================================================
+# PROVENANCE QUERIES (RDF-star)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# GET_FACT_PROVENANCE: Get provenance for a specific fact
+# Parameters: $SUBJECT_URI, $PREDICATE_URI, $BATCH_URI
+# -----------------------------------------------------------------------------
+
+SELECT ?value ?source ?confidence ?timestamp ?etlRun
+FROM $BATCH_URI
+WHERE {
+    <$SUBJECT_URI> <$PREDICATE_URI> ?value .
+
+    OPTIONAL {
+        << <$SUBJECT_URI> <$PREDICATE_URI> ?value >>
+            prov:wasDerivedFrom ?source ;
+            ex:confidence ?confidence ;
+            prov:generatedAtTime ?timestamp ;
+            prov:wasGeneratedBy ?etlRun .
+    }
+}
+
+
+# -----------------------------------------------------------------------------
+# GET_SUBJECT_PROVENANCE: Get provenance for all facts about a subject
+# Parameters: $SUBJECT_URI, $BATCH_URI
+# -----------------------------------------------------------------------------
+
+SELECT ?predicate ?object ?source ?confidence ?timestamp
+FROM $BATCH_URI
+WHERE {
+    <$SUBJECT_URI> ?predicate ?object .
+
+    OPTIONAL {
+        << <$SUBJECT_URI> ?predicate ?object >>
+            prov:wasDerivedFrom ?source .
+    }
+    OPTIONAL {
+        << <$SUBJECT_URI> ?predicate ?object >>
+            ex:confidence ?confidence .
+    }
+    OPTIONAL {
+        << <$SUBJECT_URI> ?predicate ?object >>
+            prov:generatedAtTime ?timestamp .
+    }
+}
+ORDER BY ?predicate
+
+
+# -----------------------------------------------------------------------------
+# GET_SUBJECT_PROVENANCE_AT_TIME: Provenance at a point in time
+# Parameters: $SUBJECT_URI, $TARGET_DATETIME
+# -----------------------------------------------------------------------------
+
+SELECT ?predicate ?object ?source ?confidence ?timestamp ?batchDate
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        ?batch a ex:Batch ;
+               dct:created ?batchDate ;
+               ex:loadedAt ?loadedAt .
+        FILTER(?loadedAt <= "$TARGET_DATETIME"^^xsd:dateTime)
+        OPTIONAL { ?batch ex:supersededAt ?supersededAt }
+        FILTER(!BOUND(?supersededAt) || ?supersededAt > "$TARGET_DATETIME"^^xsd:dateTime)
+    }
+    GRAPH ?batch {
+        <$SUBJECT_URI> ?predicate ?object .
+        OPTIONAL {
+            << <$SUBJECT_URI> ?predicate ?object >>
+                prov:wasDerivedFrom ?source ;
+                ex:confidence ?confidence ;
+                prov:generatedAtTime ?timestamp .
+        }
+    }
+}
+ORDER BY ?predicate
+
+
+# =============================================================================
+# BATCH COMPARISON QUERIES
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# DIFF_ADDED: Triples in new batch but not in old batch
+# Parameters: $OLD_BATCH_URI, $NEW_BATCH_URI, $LIMIT
+# -----------------------------------------------------------------------------
+
+SELECT ?subject ?predicate ?object
+WHERE {
+    GRAPH $NEW_BATCH_URI {
+        ?subject ?predicate ?object .
+    }
+    FILTER NOT EXISTS {
+        GRAPH $OLD_BATCH_URI {
+            ?subject ?predicate ?object .
+        }
+    }
+}
+LIMIT $LIMIT
+
+
+# -----------------------------------------------------------------------------
+# DIFF_REMOVED: Triples in old batch but not in new batch
+# Parameters: $OLD_BATCH_URI, $NEW_BATCH_URI, $LIMIT
+# -----------------------------------------------------------------------------
+
+SELECT ?subject ?predicate ?object
+WHERE {
+    GRAPH $OLD_BATCH_URI {
+        ?subject ?predicate ?object .
+    }
+    FILTER NOT EXISTS {
+        GRAPH $NEW_BATCH_URI {
+            ?subject ?predicate ?object .
+        }
+    }
+}
+LIMIT $LIMIT
+
+
+# -----------------------------------------------------------------------------
+# DIFF_FULL: Full diff with change type
+# Parameters: $OLD_BATCH_URI, $NEW_BATCH_URI, $LIMIT
+# -----------------------------------------------------------------------------
+
+SELECT ?changeType ?subject ?predicate ?object
+WHERE {
+    {
+        GRAPH $NEW_BATCH_URI { ?subject ?predicate ?object }
+        FILTER NOT EXISTS { GRAPH $OLD_BATCH_URI { ?subject ?predicate ?object } }
+        BIND("added" AS ?changeType)
+    }
+    UNION
+    {
+        GRAPH $OLD_BATCH_URI { ?subject ?predicate ?object }
+        FILTER NOT EXISTS { GRAPH $NEW_BATCH_URI { ?subject ?predicate ?object } }
+        BIND("removed" AS ?changeType)
+    }
+}
+ORDER BY ?changeType ?subject ?predicate
+LIMIT $LIMIT
+
+
+# -----------------------------------------------------------------------------
+# DIFF_SUMMARY: Summary counts of changes
+# Parameters: $OLD_BATCH_URI, $NEW_BATCH_URI
+# -----------------------------------------------------------------------------
+
+SELECT
+    (SUM(IF(?changeType = "added", 1, 0)) AS ?addedCount)
+    (SUM(IF(?changeType = "removed", 1, 0)) AS ?removedCount)
+WHERE {
+    {
+        GRAPH $NEW_BATCH_URI { ?s ?p ?o }
+        FILTER NOT EXISTS { GRAPH $OLD_BATCH_URI { ?s ?p ?o } }
+        BIND("added" AS ?changeType)
+    }
+    UNION
+    {
+        GRAPH $OLD_BATCH_URI { ?s ?p ?o }
+        FILTER NOT EXISTS { GRAPH $NEW_BATCH_URI { ?s ?p ?o } }
+        BIND("removed" AS ?changeType)
+    }
+}
+
+
+# -----------------------------------------------------------------------------
+# DIFF_MODIFIED_SUBJECTS: Subjects that exist in both but have changes
+# Parameters: $OLD_BATCH_URI, $NEW_BATCH_URI, $LIMIT
+# -----------------------------------------------------------------------------
+
+SELECT DISTINCT ?subject
+WHERE {
+    GRAPH $OLD_BATCH_URI { ?subject ?p1 ?o1 }
+    GRAPH $NEW_BATCH_URI { ?subject ?p2 ?o2 }
+
+    FILTER EXISTS {
+        {
+            GRAPH $OLD_BATCH_URI { ?subject ?px ?ox }
+            FILTER NOT EXISTS { GRAPH $NEW_BATCH_URI { ?subject ?px ?ox } }
+        }
+        UNION
+        {
+            GRAPH $NEW_BATCH_URI { ?subject ?py ?oy }
+            FILTER NOT EXISTS { GRAPH $OLD_BATCH_URI { ?subject ?py ?oy } }
+        }
+    }
+}
+LIMIT $LIMIT
+
+
+# =============================================================================
+# HISTORY QUERIES
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# VALUE_HISTORY: Track how a specific value changed over time
+# Parameters: $SUBJECT_URI, $PREDICATE_URI
+# -----------------------------------------------------------------------------
+
+SELECT ?batchNumber ?batchDate ?value ?source ?confidence
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        ?batch a ex:Batch ;
+               ex:batchNumber ?batchNumber ;
+               dct:created ?batchDate .
+    }
+    GRAPH ?batch {
+        <$SUBJECT_URI> <$PREDICATE_URI> ?value .
+        OPTIONAL {
+            << <$SUBJECT_URI> <$PREDICATE_URI> ?value >>
+                prov:wasDerivedFrom ?source ;
+                ex:confidence ?confidence .
+        }
+    }
+}
+ORDER BY ?batchNumber
+
+
+# -----------------------------------------------------------------------------
+# FIND_VALUE_CHANGES: When did a specific value change?
+# Parameters: $SUBJECT_URI, $PREDICATE_URI
+# -----------------------------------------------------------------------------
+
+SELECT ?oldBatchNum ?newBatchNum ?oldBatchDate ?newBatchDate ?oldValue ?newValue
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        ?oldBatch a ex:Batch ;
+                  ex:batchNumber ?oldBatchNum ;
+                  dct:created ?oldBatchDate .
+        ?newBatch a ex:Batch ;
+                  ex:batchNumber ?newBatchNum ;
+                  dct:created ?newBatchDate .
+        FILTER(?newBatchNum = ?oldBatchNum + 1)
+    }
+    GRAPH ?oldBatch {
+        <$SUBJECT_URI> <$PREDICATE_URI> ?oldValue .
+    }
+    GRAPH ?newBatch {
+        <$SUBJECT_URI> <$PREDICATE_URI> ?newValue .
+    }
+    FILTER(?oldValue != ?newValue)
+}
+ORDER BY ?oldBatchNum
+
+
+# -----------------------------------------------------------------------------
+# SUBJECT_FULL_HISTORY: Complete history of all changes to a subject
+# Parameters: $SUBJECT_URI
+# -----------------------------------------------------------------------------
+
+SELECT ?batchNumber ?batchDate ?predicate ?object ?changeType
+WHERE {
+    GRAPH <http://example.org/graph/metadata> {
+        ?batch a ex:Batch ;
+               ex:batchNumber ?batchNumber ;
+               dct:created ?batchDate .
+        OPTIONAL {
+            ?prevBatch a ex:Batch ;
+                       ex:batchNumber ?prevNum .
+            FILTER(?prevNum = ?batchNumber - 1)
+        }
+    }
+
+    {
+        # Facts in this batch
+        GRAPH ?batch {
+            <$SUBJECT_URI> ?predicate ?object .
+        }
+        # Check if new
+        OPTIONAL {
+            GRAPH ?prevBatch {
+                <$SUBJECT_URI> ?predicate ?object .
+            }
+        }
+        BIND(IF(BOUND(?prevBatch) && EXISTS { GRAPH ?prevBatch { <$SUBJECT_URI> ?predicate ?object } }, "unchanged", "added") AS ?changeType)
+    }
+}
+ORDER BY ?batchNumber ?predicate
+
+
+# =============================================================================
+# RETENTION MANAGEMENT
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# ARCHIVE_OLD_BATCHES: Archive batches older than N days
+# Parameters: $DAYS_OLD
+# -----------------------------------------------------------------------------
+
+DELETE {
+    GRAPH <http://example.org/graph/metadata> {
+        ?batch ex:status ex:BatchStatus/superseded .
+    }
+}
+INSERT {
+    GRAPH <http://example.org/graph/metadata> {
+        ?batch ex:status ex:BatchStatus/archived ;
+               ex:archivedAt ?now .
+    }
+}
+WHERE {
+    BIND(NOW() AS ?now)
+    GRAPH <http://example.org/graph/metadata> {
+        ?batch a ex:Batch ;
+               ex:status ex:BatchStatus/superseded ;
+               dct:created ?created .
+        FILTER(?now - ?created > "P${DAYS_OLD}D"^^xsd:duration)
+    }
+}
+
+
+# -----------------------------------------------------------------------------
+# COUNT_BATCHES_BY_STATUS: Statistics for retention planning
+# -----------------------------------------------------------------------------
+
+SELECT ?status (COUNT(?batch) AS ?count)
+FROM <http://example.org/graph/metadata>
+WHERE {
+    ?batch a ex:Batch ;
+           ex:status ?status .
+}
+GROUP BY ?status
+ORDER BY ?status
+
+
+# -----------------------------------------------------------------------------
+# FIND_BATCHES_FOR_CLEANUP: Find batches eligible for cleanup
+# Parameters: $ARCHIVE_DAYS, $DELETE_DAYS
+# -----------------------------------------------------------------------------
+
+SELECT ?batch ?batchNumber ?status ?created ?ageInDays ?recommendedAction
+WHERE {
+    BIND(NOW() AS ?now)
+    GRAPH <http://example.org/graph/metadata> {
+        ?batch a ex:Batch ;
+               ex:batchNumber ?batchNumber ;
+               ex:status ?status ;
+               dct:created ?created .
+    }
+    BIND(FLOOR((?now - ?created) / 86400) AS ?ageInDays)
+    BIND(
+        IF(?ageInDays > $DELETE_DAYS && ?status = ex:BatchStatus/archived, "DELETE",
+        IF(?ageInDays > $ARCHIVE_DAYS && ?status = ex:BatchStatus/superseded, "ARCHIVE",
+        "KEEP")) AS ?recommendedAction
+    )
+    FILTER(?recommendedAction != "KEEP")
+}
+ORDER BY ?recommendedAction DESC(?ageInDays)
+
+
+# =============================================================================
+# UTILITY QUERIES
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# COUNT_QUADS_IN_BATCH: Count quads in a specific batch
+# Parameters: $BATCH_URI
+# -----------------------------------------------------------------------------
+
+SELECT (COUNT(*) AS ?quadCount)
+WHERE {
+    GRAPH $BATCH_URI { ?s ?p ?o }
+}
+
+
+# -----------------------------------------------------------------------------
+# COUNT_SUBJECTS_IN_BATCH: Count distinct subjects in a batch
+# Parameters: $BATCH_URI
+# -----------------------------------------------------------------------------
+
+SELECT (COUNT(DISTINCT ?s) AS ?subjectCount)
+WHERE {
+    GRAPH $BATCH_URI { ?s ?p ?o }
+}
+
+
+# -----------------------------------------------------------------------------
+# LIST_ALL_GRAPHS: List all batch graphs with counts
+# -----------------------------------------------------------------------------
+
+SELECT ?graph (COUNT(*) AS ?tripleCount)
+WHERE {
+    GRAPH ?graph { ?s ?p ?o }
+    FILTER(STRSTARTS(STR(?graph), "http://example.org/batch/"))
+}
+GROUP BY ?graph
+ORDER BY DESC(?tripleCount)
+
+
+# -----------------------------------------------------------------------------
+# VALIDATE_BATCH_METADATA: Check for batches without required metadata
+# -----------------------------------------------------------------------------
+
+SELECT ?batch ?missing
+FROM <http://example.org/graph/metadata>
+WHERE {
+    ?batch a ex:Batch .
+    {
+        FILTER NOT EXISTS { ?batch ex:batchNumber ?num }
+        BIND("batchNumber" AS ?missing)
+    }
+    UNION
+    {
+        FILTER NOT EXISTS { ?batch ex:status ?status }
+        BIND("status" AS ?missing)
+    }
+    UNION
+    {
+        FILTER NOT EXISTS { ?batch dct:created ?created }
+        BIND("created" AS ?missing)
+    }
+}
+

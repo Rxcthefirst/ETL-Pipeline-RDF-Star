@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <product id="P001" category="electronics">
+    <name>Wireless Mouse</name>
+    <description>Ergonomic wireless mouse with USB receiver</description>
+    <price currency="USD">29.99</price>
+    <stock>150</stock>
+    <manufacturer>TechGear</manufacturer>
+  </product>
+  <product id="P002" category="electronics">
+    <name>Mechanical Keyboard</name>
+    <description>RGB mechanical keyboard with Cherry MX switches</description>
+    <price currency="USD">89.99</price>
+    <stock>75</stock>
+    <manufacturer>KeyMaster</manufacturer>
+  </product>
+  <product id="P003" category="office">
+    <name>Standing Desk</name>
+    <description>Electric height-adjustable standing desk</description>
+    <price currency="USD">449.00</price>
+    <stock>25</stock>
+    <manufacturer>ErgoWorks</manufacturer>
+  </product>
+  <product id="P004" category="electronics">
+    <name>4K Monitor</name>
+    <description>27-inch 4K IPS monitor with USB-C</description>
+    <price currency="USD">349.99</price>
+    <stock>40</stock>
+    <manufacturer>ViewTech</manufacturer>
+  </product>
+  <product id="P005" category="accessories">
+    <name>USB-C Hub</name>
+    <description>7-in-1 USB-C hub with HDMI and ethernet</description>
+    <price currency="USD">59.99</price>
+    <stock>200</stock>
+    <manufacturer>ConnectAll</manufacturer>
+  </product>
+</catalog>
+

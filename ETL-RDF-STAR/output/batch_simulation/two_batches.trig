@@ -1,0 +1,95 @@
+@prefix ex: <http://example.org/> .
+@prefix batch: <http://example.org/batch/> .
+@prefix schema: <http://schema.org/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+<http://example.org/graph/metadata> {
+	<http://example.org/batch/2026-02-17T10:00:00Z> <http://example.org/supersedes> <http://example.org/batch/2026-02-15T10:00:00Z> ;
+		<http://example.org/quadCount> 32 ;
+		<http://purl.org/dc/terms/description> "Daily update - Feb 17 with credit score changes" ;
+		<http://example.org/loadedAt> "2026-02-17T10:05:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://purl.org/dc/terms/created> "2026-02-17T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/status> <http://example.org/BatchStatus/active> ;
+		<http://example.org/batchNumber> 2 ;
+		a <http://example.org/Batch> .
+	<http://example.org/batch/2026-02-15T10:00:00Z> <http://example.org/supersededAt> "2026-02-17T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/quadCount> 32 ;
+		<http://purl.org/dc/terms/description> "Initial customer data load - Feb 15" ;
+		<http://example.org/loadedAt> "2026-02-15T10:05:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://purl.org/dc/terms/created> "2026-02-15T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/status> <http://example.org/BatchStatus/superseded> ;
+		<http://example.org/batchNumber> 1 ;
+		a <http://example.org/Batch> .
+}
+<http://example.org/batch/2026-02-17T10:00:00Z> {
+	_:c086a97b16d3f6d5f218e4f2fb965a44 <http://www.w3.org/ns/prov#generatedAtTime> "2026-02-17T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/confidence> 0.91 ;
+		<http://www.w3.org/ns/prov#wasDerivedFrom> <http://example.org/source/Experian> ;
+		<http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> <<( <http://example.org/customer/C005> <http://schema.org/creditScore> 710 )>> .
+	<http://example.org/customer/C005> <http://schema.org/creditScore> 710 ;
+		<http://schema.org/email> "eve@example.com" ;
+		<http://xmlns.com/foaf/0.1/name> "Eve Davis" ;
+		a <http://schema.org/Person> .
+	_:c08dfccf94bf5dc5b005120f58319b73 <http://www.w3.org/ns/prov#generatedAtTime> "2026-02-17T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/confidence> 0.98 ;
+		<http://www.w3.org/ns/prov#wasDerivedFrom> <http://example.org/source/Equifax> ;
+		<http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> <<( <http://example.org/customer/C003> <http://schema.org/creditScore> 750 )>> .
+	<http://example.org/customer/C003> <http://schema.org/creditScore> 750 ;
+		<http://schema.org/email> "carol@example.com" ;
+		<http://xmlns.com/foaf/0.1/name> "Carol Williams" ;
+		a <http://schema.org/Person> .
+	_:d19c2328fc63fa1d2f9df8860d0d3c56 <http://www.w3.org/ns/prov#generatedAtTime> "2026-02-17T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/confidence> 0.94 ;
+		<http://www.w3.org/ns/prov#wasDerivedFrom> <http://example.org/source/TransUnion> ;
+		<http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> <<( <http://example.org/customer/C002> <http://schema.org/creditScore> 675 )>> .
+	<http://example.org/customer/C002> <http://schema.org/creditScore> 675 ;
+		<http://schema.org/email> "bob@example.com" ;
+		<http://xmlns.com/foaf/0.1/name> "Bob Smith" ;
+		a <http://schema.org/Person> .
+	_:db72265a59abea8ca5889db3c67ed740 <http://www.w3.org/ns/prov#generatedAtTime> "2026-02-17T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/confidence> 0.97 ;
+		<http://www.w3.org/ns/prov#wasDerivedFrom> <http://example.org/source/Experian> ;
+		<http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> <<( <http://example.org/customer/C001> <http://schema.org/creditScore> 735 )>> .
+	<http://example.org/customer/C001> <http://schema.org/creditScore> 735 ;
+		<http://schema.org/email> "alice@example.com" ;
+		<http://xmlns.com/foaf/0.1/name> "Alice Johnson" ;
+		a <http://schema.org/Person> .
+}
+<http://example.org/batch/2026-02-15T10:00:00Z> {
+	_:d461f5cad1850bace6ed9cd5820dbc79 <http://www.w3.org/ns/prov#generatedAtTime> "2026-02-15T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/confidence> 0.9 ;
+		<http://www.w3.org/ns/prov#wasDerivedFrom> <http://example.org/source/Experian> ;
+		<http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> <<( <http://example.org/customer/C004> <http://schema.org/creditScore> 695 )>> .
+	<http://example.org/customer/C004> <http://schema.org/creditScore> 695 ;
+		<http://schema.org/email> "david@example.com" ;
+		<http://xmlns.com/foaf/0.1/name> "David Brown" ;
+		a <http://schema.org/Person> .
+	_:e0461b3b810904f2cfde863ba631db97 <http://www.w3.org/ns/prov#generatedAtTime> "2026-02-15T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/confidence> 0.98 ;
+		<http://www.w3.org/ns/prov#wasDerivedFrom> <http://example.org/source/Equifax> ;
+		<http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> <<( <http://example.org/customer/C003> <http://schema.org/creditScore> 750 )>> .
+	<http://example.org/customer/C003> <http://schema.org/creditScore> 750 ;
+		<http://schema.org/email> "carol@example.com" ;
+		<http://xmlns.com/foaf/0.1/name> "Carol Williams" ;
+		a <http://schema.org/Person> .
+	_:c4f38ab5ff064cb9c85123161688b820 <http://www.w3.org/ns/prov#generatedAtTime> "2026-02-15T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/confidence> 0.92 ;
+		<http://www.w3.org/ns/prov#wasDerivedFrom> <http://example.org/source/TransUnion> ;
+		<http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> <<( <http://example.org/customer/C002> <http://schema.org/creditScore> 680 )>> .
+	<http://example.org/customer/C002> <http://schema.org/creditScore> 680 ;
+		<http://schema.org/email> "bob@example.com" ;
+		<http://xmlns.com/foaf/0.1/name> "Bob Smith" ;
+		a <http://schema.org/Person> .
+	_:dc2c03a09b1adf7e09f48bfba9271acd <http://www.w3.org/ns/prov#generatedAtTime> "2026-02-15T10:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> ;
+		<http://example.org/confidence> 0.95 ;
+		<http://www.w3.org/ns/prov#wasDerivedFrom> <http://example.org/source/Experian> ;
+		<http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> <<( <http://example.org/customer/C001> <http://schema.org/creditScore> 720 )>> .
+	<http://example.org/customer/C001> <http://schema.org/creditScore> 720 ;
+		<http://schema.org/email> "alice@example.com" ;
+		<http://xmlns.com/foaf/0.1/name> "Alice Johnson" ;
+		a <http://schema.org/Person> .
+}

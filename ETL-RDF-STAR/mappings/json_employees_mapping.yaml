@@ -1,0 +1,65 @@
+# =============================================================================
+# YARRRML Mapping for JSON Data with JSONPath
+# =============================================================================
+# This mapping demonstrates processing JSON files with nested structures
+# using JSONPath expressions to extract data.
+#
+# Data source: sample_data/employees.json
+# Output: RDF graph of employees with their departments and skills
+# =============================================================================
+
+prefixes:
+  ex: "http://example.org/"
+  foaf: "http://xmlns.com/foaf/0.1/"
+  schema: "http://schema.org/"
+  xsd: "http://www.w3.org/2001/XMLSchema#"
+  org: "http://www.w3.org/ns/org#"
+
+# Define output target
+targets:
+  output:
+    access: output/employees_from_json.trig
+    serialization: trig
+
+# Mappings
+mappings:
+
+  # Map each employee to a Person
+  employeeMapping:
+    sources:
+      - access: sample_data/employees.json
+        referenceFormulation: jsonpath
+        iterator: $.employees[*]
+    subjects: ex:employee/$(id)
+    predicateobjects:
+      # Type
+      - [a, foaf:Person]
+      - [a, schema:Employee]
+
+      # Basic properties
+      - [foaf:name, $(name)]
+      - [schema:email, $(email)]
+
+      # Salary with datatype
+      - predicates: schema:salary
+        objects:
+          value: $(salary)
+          datatype: xsd:decimal
+
+      # Link to department
+      - predicates: org:memberOf
+        objects:
+          value: ex:department/$(department)
+          type: iri
+
+  # Map departments
+  departmentMapping:
+    sources:
+      - access: sample_data/employees.json
+        referenceFormulation: jsonpath
+        iterator: $.employees[*]
+    subjects: ex:department/$(department)
+    predicateobjects:
+      - [a, org:OrganizationalUnit]
+      - [rdfs:label, $(department)]
+

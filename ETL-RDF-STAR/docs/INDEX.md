@@ -2,24 +2,48 @@
 
 ## 📁 Complete File Listing
 
-### 🔧 Core Implementation (3 files)
+### 🔧 Core Implementation (4 files)
 | File | Size | Description |
 |------|------|-------------|
 | `yarrrml_parser.py` | 12.1 KB | YARRRML-star parser with full support for quoted triples |
 | `rdf_star_etl_engine_dynamic.py` | 16.7 KB | Dynamic ETL engine driven by YARRRML mappings |
 | `test_dynamic_etl.py` | 7.1 KB | Comprehensive test suite (4/4 tests passing) |
+| `batch_manager.py` | 15.2 KB | Batch management with temporal provenance |
 
-### 📊 Data Files (2 files)
+### 📦 Data Source Connectors (8 files)
+| File | Size | Description |
+|------|------|-------------|
+| `sources/__init__.py` | 1.1 KB | Base classes, registry, security |
+| `sources/csv_source.py` | 2.3 KB | CSV/TSV file support |
+| `sources/json_source.py` | 2.5 KB | JSON with JSONPath |
+| `sources/xml_source.py` | 2.7 KB | XML with XPath |
+| `sources/database/postgresql.py` | 3.1 KB | PostgreSQL connector |
+| `sources/database/mysql.py` | 3.0 KB | MySQL/MariaDB connector |
+| `sources/database/sqlite.py` | 2.9 KB | SQLite connector |
+| `sources/remote/http.py` | 2.4 KB | HTTP/REST API connector |
+| `sources/remote/sparql.py` | 2.6 KB | SPARQL endpoint connector |
+
+### 📊 Data Files (4 files)
 | File | Size | Description |
 |------|------|-------------|
 | `data/data_products.csv` | 532 B | Sample dataset metadata (5 records) |
 | `data/lineage.csv` | 405 B | Sample provenance/lineage data (5 records) |
+| `sample_data/employees.json` | 1.2 KB | JSON sample data (5 records) |
+| `sample_data/products.xml` | 1.5 KB | XML sample data (5 records) |
 
 ### ⚙️ Configuration (2 files)
 | File | Size | Description |
 |------|------|-------------|
 | `etl_pipeline_config.yaml` | 1.2 KB | Pipeline configuration |
 | `mappings/data_products_rml.yaml` | 2.3 KB | YARRRML-star mapping (4 triples maps) |
+
+### 🧪 Tests (4 files)
+| File | Tests | Description |
+|------|-------|-------------|
+| `test_yarrrml_spec_comprehensive.py` | 46 | Full YARRRML specification tests |
+| `tests/test_sources.py` | 20 | Data source connector tests |
+| `tests/test_batch_manager.py` | 18 | Batch management tests |
+| `test_yarrrml_full_spec.py` | 5 | Integration tests |
 
 ### 📖 Documentation (6 files)
 | File | Size | Purpose |
@@ -30,16 +54,16 @@
 | `IMPLEMENTATION_SUMMARY.md` | 13.3 KB | Technical architecture and design |
 | `PROJECT_COMPLETION_CHECKLIST.md` | 7.7 KB | Deliverables checklist |
 | `PROJECT_SUMMARY.md` | 8.6 KB | Executive summary |
+| `docs/KNOWLEDGE_ENGINEER_GUIDE.md` | 12.1 KB | Batch management & provenance guide |
+| `ENHANCEMENT_ROADMAP.md` | 3.4 KB | Future improvements |
+| `ENHANCEMENT_SUMMARY.md` | 2.8 KB | Current capabilities summary |
+| `TEST_COVERAGE_REPORT.md` | 1.9 KB | Test coverage details |
+| `YARRRML-SPECIFICATION.md` | 15.6 KB | Full YARRRML specification |
 
-### 📤 Output (1 file)
-| File | Size | Description |
-|------|------|-------------|
-| `output/output_data_star.trig` | 17.3 KB | Generated RDF-star output (184 quads) |
-
-### 🗂️ Legacy (1 file)
-| File | Size | Description |
-|------|------|-------------|
-| `rdf_star_etl_engine.py` | 12.5 KB | Old hardcoded version (deprecated) |
+### 🎮 Demos & Scripts (1 file)
+| File | Description |
+|------|-------------|
+| `demo_batch_management.py` | Interactive batch timeline demo |
 
 ---
 
@@ -242,5 +266,4 @@ See `QUICK_START.md` → Troubleshooting section
 **Last Updated:** February 15, 2026  
 **Project Status:** ✅ COMPLETE  
 **Test Status:** ✅ 4/4 PASSING  
-**Production Ready:** ✅ YES  
-
+**Production Ready:** ✅ YES

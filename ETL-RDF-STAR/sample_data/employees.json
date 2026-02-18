@@ -1,0 +1,47 @@
+{
+  "company": "Acme Corp",
+  "updated": "2026-02-17",
+  "employees": [
+    {
+      "id": 1,
+      "name": "Alice Johnson",
+      "email": "alice@acme.com",
+      "department": "Engineering",
+      "salary": 85000,
+      "skills": ["Python", "SQL", "RDF"]
+    },
+    {
+      "id": 2,
+      "name": "Bob Smith",
+      "email": "bob@acme.com",
+      "department": "Marketing",
+      "salary": 72000,
+      "skills": ["SEO", "Analytics"]
+    },
+    {
+      "id": 3,
+      "name": "Carol Williams",
+      "email": "carol@acme.com",
+      "department": "Engineering",
+      "salary": 95000,
+      "skills": ["Java", "Kubernetes", "AWS"]
+    },
+    {
+      "id": 4,
+      "name": "David Brown",
+      "email": "david@acme.com",
+      "department": "Sales",
+      "salary": 78000,
+      "skills": ["Negotiation", "CRM"]
+    },
+    {
+      "id": 5,
+      "name": "Eve Davis",
+      "email": "eve@acme.com",
+      "department": "Engineering",
+      "salary": 110000,
+      "skills": ["Machine Learning", "Python", "TensorFlow"]
+    }
+  ]
+}
+

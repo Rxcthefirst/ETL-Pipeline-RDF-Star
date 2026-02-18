@@ -1,0 +1,41 @@
+# =============================================================================
+# RDF-star ETL Engine - Dependencies
+# =============================================================================
+# Install with: pip install -r requirements.txt
+# =============================================================================
+
+# Core Dependencies (Required)
+# -----------------------------------------------------------------------------
+polars>=0.20.0          # Fast DataFrame library
+pyoxigraph>=0.3.0       # RDF store with RDF-star support
+pyyaml>=6.0             # YAML parsing
+
+# JSON Support (Optional - for JSONPath)
+# -----------------------------------------------------------------------------
+jsonpath-ng>=1.6.0      # JSONPath query support
+
+# XML Support (Optional - for full XPath)
+# -----------------------------------------------------------------------------
+lxml>=5.0.0             # Full XPath support (ElementTree fallback available)
+
+# Database Connectors (Install as needed)
+# -----------------------------------------------------------------------------
+psycopg2-binary>=2.9.0  # PostgreSQL
+mysql-connector-python>=8.0  # MySQL/MariaDB
+# cx_Oracle>=8.0.0      # Oracle (requires Oracle client)
+# pyodbc>=5.0.0         # SQL Server (requires ODBC driver)
+
+# Remote Data Sources (Install as needed)
+# -----------------------------------------------------------------------------
+requests>=2.31.0        # HTTP/REST APIs
+SPARQLWrapper>=2.0.0    # SPARQL endpoints
+
+# Web Server (for SPARQL endpoint API)
+# -----------------------------------------------------------------------------
+fastapi>=0.109.0        # FastAPI web framework
+uvicorn>=0.27.0         # ASGI server
+
+# Development & Testing
+# -----------------------------------------------------------------------------
+pytest>=8.0.0           # Testing framework
+

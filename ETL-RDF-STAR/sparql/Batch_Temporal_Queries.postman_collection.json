@@ -1,0 +1,1132 @@
+{
+	"info": {
+		"name": "Batch Temporal Queries - Knowledge Graph",
+		"description": "Test suite for temporal knowledge graph batch management.\n\nDemonstrates:\n- Batch listing and metadata\n- Point-in-time queries\n- Batch comparisons (diff)\n- Provenance queries\n\nServer: http://localhost:7878/sparql",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:7878"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Server Health",
+			"item": [
+				{
+					"name": "1.1 Server Stats",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Data is loaded', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.data_loaded).to.be.true;",
+									"});",
+									"",
+									"pm.test('Has 80 quads', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.total_quads).to.equal(80);",
+									"});",
+									"",
+									"pm.test('Has 2 batches', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.batch_count).to.equal(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/stats",
+							"host": ["{{base_url}}"],
+							"path": ["stats"]
+						}
+					}
+				},
+				{
+					"name": "1.2 List Batches API",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Has 2 batches', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.count).to.equal(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/batches",
+							"host": ["{{base_url}}"],
+							"path": ["batches"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Batch Management",
+			"item": [
+				{
+					"name": "2.1 List All Batches (SPARQL)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns 2 batches', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?batch ?batchNumber ?status\nWHERE {\n    GRAPH <http://example.org/graph/metadata> {\n        ?batch a <http://example.org/Batch> ;\n               <http://example.org/batchNumber> ?batchNumber ;\n               <http://example.org/status> ?status .\n    }\n}\nORDER BY DESC(?batchNumber)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "2.2 Get Active Batch",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns exactly 1 active batch', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(1);",
+									"});",
+									"",
+									"pm.test('Active batch is Batch 2', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings[0].batchNumber.value).to.equal('2');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?batch ?batchNumber\nWHERE {\n    GRAPH <http://example.org/graph/metadata> {\n        ?batch a <http://example.org/Batch> ;\n               <http://example.org/batchNumber> ?batchNumber ;\n               <http://example.org/status> <http://example.org/BatchStatus/active> .\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Point-in-Time Queries",
+			"item": [
+				{
+					"name": "3.1 Alice Score in Batch 1 (720)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns 1 result', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(1);",
+									"});",
+									"",
+									"pm.test('Alice score is 720', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings[0].score.value).to.equal('720');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?score\nFROM <http://example.org/batch/2026-02-15T10:00:00Z>\nWHERE {\n    <http://example.org/customer/C001> <http://schema.org/creditScore> ?score .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "3.2 Alice Score in Batch 2 (735)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Alice score is 735', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings[0].score.value).to.equal('735');",
+									"});",
+									"",
+									"pm.test('Score increased by 15', function() {",
+									"    var json = pm.response.json();",
+									"    var score = parseInt(json.results.bindings[0].score.value);",
+									"    pm.expect(score - 720).to.equal(15);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?score\nFROM <http://example.org/batch/2026-02-17T10:00:00Z>\nWHERE {\n    <http://example.org/customer/C001> <http://schema.org/creditScore> ?score .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "3.3 David in Batch 1 (exists)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('David exists in Batch 1', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?predicate ?object\nFROM <http://example.org/batch/2026-02-15T10:00:00Z>\nWHERE {\n    <http://example.org/customer/C004> ?predicate ?object .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "3.4 David in Batch 2 (REMOVED)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('David NOT in Batch 2', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?predicate ?object\nFROM <http://example.org/batch/2026-02-17T10:00:00Z>\nWHERE {\n    <http://example.org/customer/C004> ?predicate ?object .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "3.5 Eve in Batch 1 (not exists)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Eve NOT in Batch 1', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?predicate ?object\nFROM <http://example.org/batch/2026-02-15T10:00:00Z>\nWHERE {\n    <http://example.org/customer/C005> ?predicate ?object .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "3.6 Eve in Batch 2 (NEW)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Eve exists in Batch 2', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?predicate ?object\nFROM <http://example.org/batch/2026-02-17T10:00:00Z>\nWHERE {\n    <http://example.org/customer/C005> ?predicate ?object .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "3.7 All Customers Batch 1 (4)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns 4 customers', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(4);",
+									"});",
+									"",
+									"pm.test('Includes David Brown', function() {",
+									"    var json = pm.response.json();",
+									"    var names = json.results.bindings.map(b => b.name.value);",
+									"    pm.expect(names).to.include('David Brown');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?customer ?name ?score\nFROM <http://example.org/batch/2026-02-15T10:00:00Z>\nWHERE {\n    ?customer a <http://schema.org/Person> ;\n              <http://xmlns.com/foaf/0.1/name> ?name ;\n              <http://schema.org/creditScore> ?score .\n}\nORDER BY ?name"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "3.8 All Customers Batch 2 (4)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns 4 customers', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(4);",
+									"});",
+									"",
+									"pm.test('Includes Eve Davis', function() {",
+									"    var json = pm.response.json();",
+									"    var names = json.results.bindings.map(b => b.name.value);",
+									"    pm.expect(names).to.include('Eve Davis');",
+									"});",
+									"",
+									"pm.test('NOT include David', function() {",
+									"    var json = pm.response.json();",
+									"    var names = json.results.bindings.map(b => b.name.value);",
+									"    pm.expect(names).to.not.include('David Brown');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?customer ?name ?score\nFROM <http://example.org/batch/2026-02-17T10:00:00Z>\nWHERE {\n    ?customer a <http://schema.org/Person> ;\n              <http://xmlns.com/foaf/0.1/name> ?name ;\n              <http://schema.org/creditScore> ?score .\n}\nORDER BY ?name"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Batch Comparison",
+			"item": [
+				{
+					"name": "4.1 New Customer (Eve Added)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Eve (C005) was added', function() {",
+									"    var json = pm.response.json();",
+									"    var hasEve = json.results.bindings.some(b => b.customer.value.includes('C005'));",
+									"    pm.expect(hasEve).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT DISTINCT ?customer ?name\nWHERE {\n    GRAPH <http://example.org/batch/2026-02-17T10:00:00Z> {\n        ?customer a <http://schema.org/Person> ;\n                  <http://xmlns.com/foaf/0.1/name> ?name .\n    }\n    FILTER NOT EXISTS {\n        GRAPH <http://example.org/batch/2026-02-15T10:00:00Z> {\n            ?customer a <http://schema.org/Person> .\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "4.2 Customer Removed (David)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('David (C004) was removed', function() {",
+									"    var json = pm.response.json();",
+									"    var hasDavid = json.results.bindings.some(b => b.customer.value.includes('C004'));",
+									"    pm.expect(hasDavid).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT DISTINCT ?customer ?name\nWHERE {\n    GRAPH <http://example.org/batch/2026-02-15T10:00:00Z> {\n        ?customer a <http://schema.org/Person> ;\n                  <http://xmlns.com/foaf/0.1/name> ?name .\n    }\n    FILTER NOT EXISTS {\n        GRAPH <http://example.org/batch/2026-02-17T10:00:00Z> {\n            ?customer a <http://schema.org/Person> .\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "4.3 Score Changes (720->735, 680->675)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns 2 score changes', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(2);",
+									"});",
+									"",
+									"pm.test('Alice 720->735', function() {",
+									"    var json = pm.response.json();",
+									"    var alice = json.results.bindings.find(b => b.name.value === 'Alice Johnson');",
+									"    pm.expect(alice.oldScore.value).to.equal('720');",
+									"    pm.expect(alice.newScore.value).to.equal('735');",
+									"});",
+									"",
+									"pm.test('Bob 680->675', function() {",
+									"    var json = pm.response.json();",
+									"    var bob = json.results.bindings.find(b => b.name.value === 'Bob Smith');",
+									"    pm.expect(bob.oldScore.value).to.equal('680');",
+									"    pm.expect(bob.newScore.value).to.equal('675');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?customer ?name ?oldScore ?newScore\nWHERE {\n    GRAPH <http://example.org/batch/2026-02-15T10:00:00Z> {\n        ?customer <http://xmlns.com/foaf/0.1/name> ?name ;\n                  <http://schema.org/creditScore> ?oldScore .\n    }\n    GRAPH <http://example.org/batch/2026-02-17T10:00:00Z> {\n        ?customer <http://schema.org/creditScore> ?newScore .\n    }\n    FILTER(?oldScore != ?newScore)\n}\nORDER BY ?name"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Provenance",
+			"item": [
+				{
+					"name": "5.1 All Sources Batch 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Has 3 sources', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(3);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT DISTINCT ?source\nFROM <http://example.org/batch/2026-02-15T10:00:00Z>\nWHERE {\n    ?reifier <http://www.w3.org/ns/prov#wasDerivedFrom> ?source .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "5.2 Confidence Scores Batch 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Has 4 confidence scores', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(4);",
+									"});",
+									"",
+									"pm.test('All > 0.9', function() {",
+									"    var json = pm.response.json();",
+									"    var allAbove = json.results.bindings.every(b => parseFloat(b.confidence.value) > 0.9);",
+									"    pm.expect(allAbove).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?source ?confidence\nFROM <http://example.org/batch/2026-02-17T10:00:00Z>\nWHERE {\n    ?reifier <http://www.w3.org/ns/prov#wasDerivedFrom> ?source ;\n             <http://example.org/confidence> ?confidence .\n}\nORDER BY DESC(?confidence)"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "5.3 Timestamps Batch 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('All Feb 15', function() {",
+									"    var json = pm.response.json();",
+									"    var allFeb15 = json.results.bindings.every(b => b.timestamp.value.includes('2026-02-15'));",
+									"    pm.expect(allFeb15).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?timestamp\nFROM <http://example.org/batch/2026-02-15T10:00:00Z>\nWHERE {\n    ?reifier <http://www.w3.org/ns/prov#generatedAtTime> ?timestamp .\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Regulatory Scenarios",
+			"item": [
+				{
+					"name": "6.1 State on Feb 15 (incl David)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns 4 customers', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(4);",
+									"});",
+									"",
+									"pm.test('Includes David', function() {",
+									"    var json = pm.response.json();",
+									"    var names = json.results.bindings.map(b => b.name.value);",
+									"    pm.expect(names).to.include('David Brown');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?customer ?name ?score\nFROM <http://example.org/batch/2026-02-15T10:00:00Z>\nWHERE {\n    ?customer a <http://schema.org/Person> ;\n              <http://xmlns.com/foaf/0.1/name> ?name ;\n              <http://schema.org/creditScore> ?score .\n}\nORDER BY ?name"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "6.2 Current State Feb 17",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns 4 customers', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.equal(4);",
+									"});",
+									"",
+									"pm.test('NOT include David', function() {",
+									"    var json = pm.response.json();",
+									"    var names = json.results.bindings.map(b => b.name.value);",
+									"    pm.expect(names).to.not.include('David Brown');",
+									"});",
+									"",
+									"pm.test('Includes Eve', function() {",
+									"    var json = pm.response.json();",
+									"    var names = json.results.bindings.map(b => b.name.value);",
+									"    pm.expect(names).to.include('Eve Davis');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?customer ?name ?score\nFROM <http://example.org/batch/2026-02-17T10:00:00Z>\nWHERE {\n    ?customer a <http://schema.org/Person> ;\n              <http://xmlns.com/foaf/0.1/name> ?name ;\n              <http://schema.org/creditScore> ?score .\n}\nORDER BY ?name"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "7. AS OF Temporal Queries (Provenance-Based)",
+			"description": "Query data AS OF a specific timestamp using provenance metadata instead of named graph management",
+			"item": [
+				{
+					"name": "7.1 All Scores AS OF Feb 15 (using timestamps)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns scores with Feb 15 timestamps', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.be.above(0);",
+									"    var allFeb15 = json.results.bindings.every(b => b.timestamp.value.includes('2026-02-15'));",
+									"    pm.expect(allFeb15).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT DISTINCT ?customer ?name ?score ?timestamp ?source\nWHERE {\n    GRAPH ?g {\n        ?customer a <http://schema.org/Person> ;\n                  <http://xmlns.com/foaf/0.1/name> ?name ;\n                  <http://schema.org/creditScore> ?score .\n        \n        ?reifier <http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> ?triple ;\n                 <http://www.w3.org/ns/prov#generatedAtTime> ?timestamp ;\n                 <http://www.w3.org/ns/prov#wasDerivedFrom> ?source .\n    }\n    FILTER(?timestamp <= \"2026-02-15T23:59:59Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime>)\n}\nORDER BY ?name"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "7.2 All Scores AS OF Feb 17 (using timestamps)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns scores with Feb 17 timestamps', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT DISTINCT ?customer ?name ?score ?timestamp ?source\nWHERE {\n    GRAPH ?g {\n        ?customer a <http://schema.org/Person> ;\n                  <http://xmlns.com/foaf/0.1/name> ?name ;\n                  <http://schema.org/creditScore> ?score .\n        \n        ?reifier <http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> ?triple ;\n                 <http://www.w3.org/ns/prov#generatedAtTime> ?timestamp ;\n                 <http://www.w3.org/ns/prov#wasDerivedFrom> ?source .\n    }\n    FILTER(?timestamp <= \"2026-02-17T23:59:59Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime>)\n}\nORDER BY ?name"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "7.3 Latest Score Per Customer (AS OF now)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns latest scores', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT DISTINCT ?customer ?name ?score ?timestamp ?source\nWHERE {\n    GRAPH ?g {\n        ?customer a <http://schema.org/Person> ;\n                  <http://xmlns.com/foaf/0.1/name> ?name ;\n                  <http://schema.org/creditScore> ?score .\n        \n        ?reifier <http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> ?triple ;\n                 <http://www.w3.org/ns/prov#generatedAtTime> ?timestamp ;\n                 <http://www.w3.org/ns/prov#wasDerivedFrom> ?source .\n    }\n}\nORDER BY ?name ?timestamp"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "7.4 Score History for Alice (all timestamps)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns Alice score history', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?score ?timestamp ?source ?confidence\nWHERE {\n    GRAPH ?g {\n        <http://example.org/customer/C001> <http://schema.org/creditScore> ?score .\n        \n        ?reifier <http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> ?triple ;\n                 <http://www.w3.org/ns/prov#generatedAtTime> ?timestamp ;\n                 <http://www.w3.org/ns/prov#wasDerivedFrom> ?source .\n        OPTIONAL { ?reifier <http://example.org/confidence> ?confidence }\n    }\n}\nORDER BY ?timestamp"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "7.5 Changes Between Two Dates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns changes in date range', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT DISTINCT ?customer ?name ?score ?timestamp ?source\nWHERE {\n    GRAPH ?g {\n        ?customer a <http://schema.org/Person> ;\n                  <http://xmlns.com/foaf/0.1/name> ?name ;\n                  <http://schema.org/creditScore> ?score .\n        \n        ?reifier <http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> ?triple ;\n                 <http://www.w3.org/ns/prov#generatedAtTime> ?timestamp ;\n                 <http://www.w3.org/ns/prov#wasDerivedFrom> ?source .\n    }\n    FILTER(?timestamp >= \"2026-02-16T00:00:00Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime> && \n           ?timestamp <= \"2026-02-17T23:59:59Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime>)\n}\nORDER BY ?timestamp ?name"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				},
+				{
+					"name": "7.6 Why Did We Believe This? (Full Provenance AS OF)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function() {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Returns provenance evidence', function() {",
+									"    var json = pm.response.json();",
+									"    pm.expect(json.results.bindings.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/sparql-query"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "SELECT ?name ?score ?source ?confidence ?timestamp\nWHERE {\n    GRAPH ?g {\n        <http://example.org/customer/C001> <http://xmlns.com/foaf/0.1/name> ?name ;\n                                            <http://schema.org/creditScore> ?score .\n        \n        ?reifier <http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> ?triple ;\n                 <http://www.w3.org/ns/prov#generatedAtTime> ?timestamp ;\n                 <http://www.w3.org/ns/prov#wasDerivedFrom> ?source .\n        OPTIONAL { ?reifier <http://example.org/confidence> ?confidence }\n    }\n    FILTER(?timestamp <= \"2026-02-15T23:59:59Z\"^^<http://www.w3.org/2001/XMLSchema#dateTime>)\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/sparql",
+							"host": ["{{base_url}}"],
+							"path": ["sparql"]
+						}
+					}
+				}
+			]
+		}
+	]
+}

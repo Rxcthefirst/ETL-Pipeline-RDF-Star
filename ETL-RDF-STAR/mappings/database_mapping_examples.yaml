@@ -1,0 +1,178 @@
+# =============================================================================
+# YARRRML Mapping for Database Sources
+# =============================================================================
+# This mapping demonstrates connecting to SQL databases with secure
+# credential handling via environment variables.
+#
+# Supported databases:
+# - PostgreSQL
+# - MySQL/MariaDB
+# - SQLite
+# - SQL Server
+# - Oracle
+#
+# Security: Credentials use ${VAR_NAME} syntax to read from environment
+# =============================================================================
+
+prefixes:
+  ex: "http://example.org/"
+  schema: "http://schema.org/"
+  foaf: "http://xmlns.com/foaf/0.1/"
+  xsd: "http://www.w3.org/2001/XMLSchema#"
+
+# =============================================================================
+# POSTGRESQL EXAMPLE
+# =============================================================================
+# Prerequisites:
+#   pip install psycopg2-binary
+#   export PG_USER=your_username
+#   export PG_PASSWORD=your_password
+# =============================================================================
+
+mappings:
+
+  # PostgreSQL: Query customers table
+  postgresCustomers:
+    sources:
+      - type: postgresql
+        access: localhost:5432/mydb
+        credentials:
+          username: ${PG_USER}
+          password: ${PG_PASSWORD}
+        query: |
+          SELECT id, name, email, created_at, tier
+          FROM customers
+          WHERE active = true
+          ORDER BY created_at DESC
+          LIMIT 1000
+        referenceFormulation: csv
+        ssl: true
+    subjects: ex:customer/$(id)
+    predicateobjects:
+      - [a, schema:Customer]
+      - [foaf:name, $(name)]
+      - [schema:email, $(email)]
+      - predicates: schema:membershipLevel
+        objects:
+          value: ex:tier/$(tier)
+          type: iri
+
+# =============================================================================
+# MYSQL EXAMPLE
+# =============================================================================
+# Prerequisites:
+#   pip install mysql-connector-python
+#   export MYSQL_USER=your_username
+#   export MYSQL_PASSWORD=your_password
+# =============================================================================
+
+  # MySQL: Query orders with products
+  mysqlOrders:
+    sources:
+      - type: mysql
+        access: localhost:3306/ecommerce
+        credentials:
+          username: ${MYSQL_USER}
+          password: ${MYSQL_PASSWORD}
+        query: |
+          SELECT o.order_id, o.customer_id, o.order_date, 
+                 p.product_name, oi.quantity, oi.price
+          FROM orders o
+          JOIN order_items oi ON o.order_id = oi.order_id
+          JOIN products p ON oi.product_id = p.product_id
+          WHERE o.order_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        referenceFormulation: csv
+    subjects: ex:order/$(order_id)
+    predicateobjects:
+      - [a, schema:Order]
+      - predicates: schema:customer
+        objects:
+          value: ex:customer/$(customer_id)
+          type: iri
+      - predicates: schema:orderDate
+        objects:
+          value: $(order_date)
+          datatype: xsd:date
+
+# =============================================================================
+# SQLITE EXAMPLE (Local file, no credentials needed)
+# =============================================================================
+
+  # SQLite: Local database
+  sqliteProducts:
+    sources:
+      - type: sqlite
+        access: data/local.db
+        query: |
+          SELECT product_id, name, category, price, inventory
+          FROM products
+          WHERE inventory > 0
+        referenceFormulation: csv
+    subjects: ex:product/$(product_id)
+    predicateobjects:
+      - [a, schema:Product]
+      - [schema:name, $(name)]
+      - predicates: schema:price
+        objects:
+          value: $(price)
+          datatype: xsd:decimal
+
+# =============================================================================
+# SQL SERVER EXAMPLE
+# =============================================================================
+# Prerequisites:
+#   pip install pyodbc
+#   export MSSQL_USER=your_username
+#   export MSSQL_PASSWORD=your_password
+# =============================================================================
+
+  # SQL Server: Query employees
+  mssqlEmployees:
+    sources:
+      - type: mssqlserver
+        access: server\\instance/HRDatabase
+        credentials:
+          username: ${MSSQL_USER}
+          password: ${MSSQL_PASSWORD}
+        query: |
+          SELECT EmployeeID, FirstName, LastName, Department, HireDate
+          FROM Employees
+          WHERE IsActive = 1
+        referenceFormulation: csv
+    subjects: ex:employee/$(EmployeeID)
+    predicateobjects:
+      - [a, foaf:Person]
+      - [foaf:firstName, $(FirstName)]
+      - [foaf:lastName, $(LastName)]
+
+# =============================================================================
+# ORACLE EXAMPLE
+# =============================================================================
+# Prerequisites:
+#   pip install cx_Oracle
+#   export ORACLE_USER=your_username
+#   export ORACLE_PASSWORD=your_password
+# =============================================================================
+
+  # Oracle: Query inventory
+  oracleInventory:
+    sources:
+      - type: oracle
+        access: localhost:1521/ORCL
+        credentials:
+          username: ${ORACLE_USER}
+          password: ${ORACLE_PASSWORD}
+        query: |
+          SELECT item_id, item_name, warehouse, quantity, last_updated
+          FROM inventory
+          WHERE quantity > 0
+        referenceFormulation: csv
+    subjects: ex:inventory/$(item_id)
+    predicateobjects:
+      - [a, schema:InventoryItem]
+      - [schema:name, $(item_name)]
+      - predicates: schema:quantity
+        objects:
+          value: $(quantity)
+          datatype: xsd:integer
+

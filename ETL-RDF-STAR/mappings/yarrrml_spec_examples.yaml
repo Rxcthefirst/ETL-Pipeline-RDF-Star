@@ -1,0 +1,655 @@
+# ============================================================================
+# YARRRML FULL SPECIFICATION EXAMPLES
+# ============================================================================
+# This file contains ALL examples from the YARRRML specification for testing.
+# Each example is numbered according to the specification.
+# ============================================================================
+
+# =============================================================================
+# SECTION 3: BASE IRI (Example 1)
+# =============================================================================
+base: http://mybaseiri.com#
+
+# =============================================================================
+# SECTION 4: PREFIXES AND NAMESPACES (Example 2)
+# =============================================================================
+prefixes:
+  ex: "http://www.example.com/"
+  test: "http://www.test.com/"
+  foaf: "http://xmlns.com/foaf/0.1/"
+  rdfs: "http://www.w3.org/2000/01/rdf-schema#"
+  xsd: "http://www.w3.org/2001/XMLSchema#"
+  schema: "http://schema.org/"
+  dcat: "http://www.w3.org/ns/dcat#"
+  prov: "http://www.w3.org/ns/prov#"
+
+# =============================================================================
+# SECTION 5: AUTHORS (Examples 3, 5, 7, 9)
+# =============================================================================
+# Example 3: Long format authors
+# Example 5: Shortcut format authors
+# Example 7: WebID format authors
+# Example 9: Single author (no array needed)
+authors:
+  # Example 3 format
+  - name: John Doe
+    email: john@doe.com
+  - name: Jane Doe
+    website: https://janedoe.com
+  # Example 5 format
+  - John Smith <john@smith.com>
+  - Jane Smith (https://janesmith.com)
+  # Example 7 format
+  - http://johndoe.com/#me
+
+# =============================================================================
+# SECTION 7: DATA SOURCES (Examples 11, 13, 15)
+# =============================================================================
+sources:
+  # Example 11: One data source (long format)
+  person-source:
+    access: data/person.json
+    referenceFormulation: jsonpath
+    iterator: $
+
+  # Example 13: One data source using shortcuts
+  person-source-shortcut: [data/person.json~jsonpath, $]
+
+  # Example for CSV source (our primary use case)
+  csv-source:
+    access: data/test.csv
+    referenceFormulation: csv
+
+# =============================================================================
+# SECTION 8: TARGETS (Examples 17, 19)
+# =============================================================================
+targets:
+  # Example 17: One target (long format)
+  person-target:
+    access: data/dump.ttl.gz
+    type: void
+    serialization: turtle
+    compression: gzip
+
+  # Example 19: One target using shortcuts
+  person-target-shortcut: [data/dump.ttl.gz~void, turtle, gzip]
+
+# =============================================================================
+# SECTION 13: EXTERNAL REFERENCES (Examples 120, 122, 124)
+# =============================================================================
+external:
+  name: John
+  city: Ghent
+
+# =============================================================================
+# SECTION 9: MAPPINGS
+# =============================================================================
+mappings:
+
+  # ===========================================================================
+  # SECTION 9.1: DATA SOURCES IN MAPPINGS (Examples 25, 27, 29, 31, 33, 35, 37)
+  # ===========================================================================
+
+  # Example 25: Mapping with one data source (long format)
+  example25_one_source_long:
+    sources:
+      access: data/person.json
+      referenceFormulation: jsonpath
+      iterator: $
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [a, foaf:Person]
+
+  # Example 27: Mapping with one data source using shortcuts
+  example27_one_source_shortcut:
+    sources:
+      - [data/person.json~jsonpath, $]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [a, foaf:Person]
+
+  # Example 29: Mapping with two data sources (long format)
+  example29_two_sources_long:
+    sources:
+      - access: data/person.json
+        referenceFormulation: jsonpath
+        iterator: $
+      - access: data/person2.json
+        referenceFormulation: jsonpath
+        iterator: "$.persons[*]"
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [a, foaf:Person]
+
+  # Example 31: Mapping with two data sources using shortcuts
+  example31_two_sources_shortcut:
+    sources:
+      - [data/person.json~jsonpath, $]
+      - [data/person2.json~jsonpath, "$.persons[*]"]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [a, foaf:Person]
+
+  # Example 33: Mapping referencing root-level source
+  example33_source_reference:
+    sources: person-source
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [a, foaf:Person]
+
+  # ===========================================================================
+  # SECTION 9.3: SUBJECTS (Examples 53, 55)
+  # ===========================================================================
+
+  # Example 53: Mapping with one subject
+  example53_one_subject:
+    sources:
+      - [data/test.csv~csv]
+    subjects: http://www.example.com/person/$(id)
+    predicateobjects:
+      - [a, foaf:Person]
+
+  # Example 55: Mapping with two subjects (array)
+  example55_two_subjects:
+    sources:
+      - [data/test.csv~csv]
+    subjects: [http://www.example.com/person/$(id), http://www.test.com/$(firstname)]
+    predicateobjects:
+      - [a, foaf:Person]
+
+  # ===========================================================================
+  # SECTION 9.4: PREDICATES AND OBJECTS (Examples 57-69)
+  # ===========================================================================
+
+  # Example 57: Mapping with one predicate and object (long format)
+  example57_one_po_long:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects: $(firstname)
+
+  # Example 59: Mapping with one predicate and object using shortcuts
+  example59_one_po_shortcut:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [foaf:firstName, $(firstname)]
+
+  # Example 61: Mapping with two predicates and objects (long format)
+  example61_two_po_long:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: [foaf:name, rdfs:label]
+        objects: [$(firstname), $(lastname)]
+
+  # Example 63: Mapping with two predicates and objects using shortcuts
+  example63_two_po_shortcut:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [[foaf:name, rdfs:label], [$(firstname), $(lastname)]]
+
+  # Example 65: Mapping with object that generates an IRI (long format)
+  example65_iri_object_long:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:knows
+        objects:
+          value: $(colleague)
+          type: iri
+
+  # Example 67: Mapping with object that generates an IRI using shortcuts
+  example67_iri_object_shortcut:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [foaf:knows, $(colleague)~iri]
+
+  # Example 69: Mapping with one inverse predicate
+  example69_inverse_predicate:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:work/$(id)
+    predicateobjects:
+      - predicates: ex:createdBy
+        inversepredicates: ex:created
+        objects:
+          value: $(foafprofile)
+          type: iri
+
+  # ===========================================================================
+  # SECTION 9.5: DATATYPES (Examples 70, 72, 74, 76, 78)
+  # ===========================================================================
+
+  # Example 70: Mapping with one datatype (long format)
+  example70_datatype_long:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects:
+          value: $(firstname)
+          datatype: xsd:string
+
+  # Example 72: Mapping with one datatype using shortcuts
+  example72_datatype_shortcut:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [foaf:firstName, $(firstname), xsd:string]
+
+  # Example 74: Mapping with two datatypes (long format)
+  example74_two_datatypes_long:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:name
+        objects:
+          - value: $(firstname)
+            datatype: ex:string
+          - value: $(lastname)
+            datatype: ex:anotherString
+      - predicates: rdfs:label
+        objects:
+          - value: $(firstname)
+            datatype: ex:string
+          - value: $(lastname)
+            datatype: ex:anotherString
+
+  # Example 76: Mapping with two datatypes using shortcuts
+  example76_two_datatypes_shortcut:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: [foaf:name, rdfs:label]
+        objects: [[$(firstname), ex:string], [$(lastname), ex:anotherString]]
+
+  # Example 78: Mapping with reference datatype
+  example78_reference_datatype:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects:
+          value: $(firstname)
+          datatype: $(my_datatype)
+
+  # ===========================================================================
+  # SECTION 9.6: LANGUAGES (Examples 80, 82, 84, 86, 88)
+  # ===========================================================================
+
+  # Example 80: Mapping with one language (long format)
+  example80_language_long:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects:
+          value: $(firstname)
+          language: en
+
+  # Example 82: Mapping with one language using shortcuts
+  example82_language_shortcut:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [foaf:firstName, $(firstname), en~lang]
+
+  # Example 84: Mapping with two languages (long format)
+  example84_two_languages_long:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:name
+        objects:
+          - value: $(firstname)
+            language: en
+          - value: $(lastname)
+            language: nl
+
+  # Example 86: Mapping with two languages using shortcuts
+  example86_two_languages_shortcut:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: [foaf:name, rdfs:label]
+        objects: [[$(firstname), en~lang], [$(lastname), nl~lang]]
+
+  # Example 88: Mapping with reference language
+  example88_reference_language:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects:
+          value: $(firstname)
+          language: $(my_language)
+
+  # ===========================================================================
+  # SECTION 9.7: REFERRING TO OTHER MAPPINGS (Example 90)
+  # ===========================================================================
+
+  # Example 90: Interlinking two mappings
+  example90_person:
+    sources:
+      - [data/test.csv~csv]
+    subjects: http://example.com/person/$(ID)
+    predicateobjects:
+      - predicates: foaf:worksFor
+        objects:
+          - mapping: example90_project
+            condition:
+              function: equal
+              parameters:
+                - [str1, $(projectID), s]
+                - [str2, $(ID), o]
+
+  example90_project:
+    sources:
+      - [data/test.csv~csv]
+    subjects: http://example.com/project/$(ID)
+    predicateobjects:
+      - [a, schema:Project]
+
+  # ===========================================================================
+  # SECTION 9.8: GRAPHS (Examples 92, 94)
+  # ===========================================================================
+
+  # Example 92: Mapping with graph for all triples
+  example92_mapping_graph:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    graphs: ex:myGraph
+    predicateobjects:
+      - [a, foaf:Person]
+      - [foaf:name, $(name)]
+
+  # Example 94: Mapping with graph for specific predicate-object
+  example94_po_graph:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects: $(firstname)
+        graphs: ex:myGraph
+
+  # ===========================================================================
+  # SECTION 10: FUNCTIONS (Examples 96, 98, 100, 102, 104, 106)
+  # ===========================================================================
+
+  # Example 96: Mapping with function on firstname (long format)
+  example96_function_long:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects:
+          - function: ex:toLowerCase
+            parameters:
+              - parameter: ex:input
+                value: $(firstname)
+
+  # Example 98: Mapping with function using shortcuts
+  example98_function_shortcut:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects:
+          - function: ex:toLowerCase
+            parameters:
+              - [ex:input, $(firstname)]
+
+  # Example 100: Mapping with function and datatype
+  example100_function_datatype:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: ex:age
+        objects:
+          - function: ex:double
+            parameters:
+              - [ex:input, $(age)]
+            datatype: xsd:integer
+
+  # Example 102: Mapping with nested functions
+  example102_nested_functions:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: schema:name
+        objects:
+          - function: ex:escape
+            parameters:
+              - parameter: ex:valueParameter
+                value:
+                  function: ex:toUpperCase
+                  parameters:
+                    - [ex:valueParameter, $(name)]
+              - [ex:modeParameter, html]
+
+  # Example 104: Mapping with inline function
+  example104_inline_function:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects:
+          - function: ex:toLowerCase(ex:input = $(firstname))
+
+  # Example 106: Mapping with inline function without prefix
+  example106_inline_function_no_prefix:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects:
+          - function: ex:toLowerCase(input = $(firstname))
+
+  # ===========================================================================
+  # SECTION 11: CONDITIONS (Examples 108, 109)
+  # ===========================================================================
+
+  # Example 108: Mapping with condition on predicate-object
+  example108_po_condition:
+    sources:
+      - [data/test.csv~csv]
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects: $(firstname)
+        condition:
+          function: ex:isValid
+          parameters:
+            - [ex:input, $(firstname)]
+
+  # Example 109: Mapping with condition at mapping level
+  example109_mapping_condition:
+    sources:
+      - [data/test.csv~csv]
+    subjects: http://example.com/$(ID)
+    condition:
+      function: ex:isSet
+      parameters:
+        - [ex:input, $(ID)]
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects: $(firstname)
+
+  # ===========================================================================
+  # SECTION 12: RDF-STAR (Examples 110, 112, 114, 116, 118)
+  # ===========================================================================
+
+  # Example 110: Quoted mapping in object
+  example110_quoted_object:
+    sources:
+      - [data/test.csv~csv]
+    subject: http://example.org/person/$(Name)
+    predicateobjects:
+      - predicates: ex:confirms
+        objects:
+          - quoted: example110_student
+
+  example110_student:
+    sources:
+      - [data/test.csv~csv]
+    subject: http://example.org/student/$(Student)
+    predicateobjects:
+      - [a, ex:Student]
+
+  # Example 112: Quoted mapping in subject
+  example112_quoted_subject:
+    sources:
+      - [data/test.csv~csv]
+    subject:
+      - quoted: example112_student
+    predicateobjects:
+      - predicates: ex:accordingTo
+        objects: http://example.org/person/$(Name)
+
+  example112_student:
+    sources:
+      - [data/test.csv~csv]
+    subject: http://example.org/student/$(Student)
+    predicateobjects:
+      - [a, ex:Student]
+
+  # Example 114: Quoted non-asserted mapping in object
+  example114_quoted_nonasserted:
+    sources:
+      - [data/test.csv~csv]
+    subject: http://example.org/person/$(Name)
+    predicateobjects:
+      - predicates: ex:confirms
+        objects:
+          - quotedNonAsserted: example114_student
+
+  example114_student:
+    sources:
+      - [data/test.csv~csv]
+    subject: http://example.org/student/$(Student)
+    predicateobjects:
+      - [a, ex:Student]
+
+  # Example 116: Join in quoted mapping in subject (long format)
+  example116_quoted_join:
+    sources:
+      - [data/test.csv~csv]
+    subject:
+      - quoted: example116_student
+        condition:
+          function: equal
+          parameters:
+            - [str1, $(condition1)]
+            - [str2, $(condition2)]
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects: $(Name)
+
+  example116_student:
+    sources:
+      - [data/test.csv~csv]
+    subject: http://example.org/student/$(Student)
+    predicateobjects:
+      - [a, ex:Student]
+
+  # Example 118: Join in quoted mapping inline shortcut
+  example118_quoted_join_inline:
+    sources:
+      - [data/test.csv~csv]
+    subject:
+      - function: join(quoted=example118_student, equal(str1=$(condition1), str2=$(condition2)))
+    predicateobjects:
+      - predicates: foaf:firstName
+        objects: $(Name)
+
+  example118_student:
+    sources:
+      - [data/test.csv~csv]
+    subject: http://example.org/student/$(Student)
+    predicateobjects:
+      - [a, ex:Student]
+
+  # ===========================================================================
+  # SECTION 13: EXTERNAL REFERENCES (Example 120)
+  # ===========================================================================
+
+  # Example 120: Using external references
+  example120_external_refs:
+    sources:
+      - [data/test.csv~csv]
+    subjects: http://example.org/$(id)
+    po:
+      - [ex:name, $(_name)]
+      - [ex:firstName, $(_name)]
+      - [ex:city, $(_city)]
+
+  # ===========================================================================
+  # SECTION 14: SHORTCUTS
+  # ===========================================================================
+
+  # Test all shortcut variations
+  example_shortcuts_m:
+    sources:
+      - [data/test.csv~csv]
+    s: ex:person/$(id)
+    po:
+      - [a, foaf:Person]
+      - p: foaf:name
+        o: $(name)
+
+  # ===========================================================================
+  # TARGETS IN SUBJECTS (Examples 39, 41, 43, 45, 47, 49, 51)
+  # ===========================================================================
+
+  # Example 39: Mapping with target in subject (long format)
+  example39_subject_target:
+    sources:
+      - [data/test.csv~csv]
+    subjects:
+      - value: http://example.org/$(id)
+        targets:
+          access: data/dump.ttl.gz
+          type: void
+          serialization: turtle
+          compression: gzip
+    predicateobjects:
+      - [a, foaf:Person]
+
+  # Example 47: Mapping referencing root-level target
+  example47_target_reference:
+    sources:
+      - [data/test.csv~csv]
+    subjects:
+      - value: http://example.org/$(id)
+        targets: person-target
+    predicateobjects:
+      - [a, foaf:Person]
+

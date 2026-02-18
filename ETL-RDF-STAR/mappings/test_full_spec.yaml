@@ -1,0 +1,197 @@
+# YARRRML Full Specification Test Mapping
+# This file demonstrates all supported YARRRML features
+
+# Base IRI (Section 3)
+base: http://example.org/base#
+
+# Authors (Section 5)
+authors:
+  - name: John Doe
+    email: john@example.com
+    website: https://johndoe.com
+  - Jane Smith <jane@example.com>
+
+# External References (Section 13)
+external:
+  defaultOrganization: ExampleCorp
+  defaultCountry: USA
+
+# Prefixes (Section 4)
+prefixes:
+  ex: "http://example.org/"
+  foaf: "http://xmlns.com/foaf/0.1/"
+  schema: "http://schema.org/"
+  xsd: "http://www.w3.org/2001/XMLSchema#"
+  dcat: "http://www.w3.org/ns/dcat#"
+  dct: "http://purl.org/dc/terms/"
+  prov: "http://www.w3.org/ns/prov#"
+
+# Root-level sources (Section 7)
+sources:
+  persons-source:
+    access: data/persons.csv
+    referenceFormulation: csv
+
+  projects-source:
+    access: data/projects.csv
+    referenceFormulation: csv
+
+# Root-level targets (Section 8)
+targets:
+  output-target:
+    access: output/full_spec_output.trig
+    type: void
+    serialization: trig
+
+# Mappings (Section 9)
+mappings:
+
+  # Test 1: Basic mapping with multiple subjects
+  personMapping:
+    sources:
+      - persons-source
+    subjects:
+      - ex:person/$(id)
+      - ex:human/$(id)
+    predicateobjects:
+      # Type statement
+      - [a, foaf:Person]
+
+      # Basic literal
+      - [foaf:name, $(name)]
+
+      # Literal with language tag (Section 9.6)
+      - predicates: foaf:givenName
+        objects:
+          value: $(firstName)
+          language: en
+
+      # Literal with datatype (Section 9.5)
+      - [schema:age, $(age), xsd:integer]
+
+      # IRI object
+      - predicates: schema:worksFor
+        objects:
+          value: ex:org/$(organization)
+          type: iri
+
+      # Shortcut for IRI
+      - [foaf:homepage, $(website)~iri]
+
+  # Test 2: Mapping with graphs (Section 9.8)
+  personWithGraphs:
+    sources:
+      - persons-source
+    subjects: ex:person/$(id)
+    graphs: ex:PersonGraph
+    predicateobjects:
+      - [a, foaf:Person]
+      - [foaf:name, $(name)]
+
+      # Override with predicate-object specific graph
+      - predicates: schema:email
+        objects: $(email)
+        graphs: ex:PrivateGraph
+
+  # Test 3: Multiple predicates and objects (Section 9.4)
+  personMultiple:
+    sources:
+      - persons-source
+    subjects: ex:person/$(id)
+    predicateobjects:
+      # Multiple predicates for same object
+      - predicates: [foaf:name, rdfs:label, schema:name]
+        objects: $(name)
+
+      # Multiple objects for same predicate
+      - predicates: schema:knows
+        objects:
+          - value: ex:person/$(friend1)
+            type: iri
+          - value: ex:person/$(friend2)
+            type: iri
+
+  # Test 4: Inverse predicates (Section 9.4)
+  projectMapping:
+    sources:
+      - projects-source
+    subjects: ex:project/$(projectId)
+    predicateobjects:
+      - [a, schema:Project]
+      - [dct:title, $(projectName)]
+
+      # With inverse predicate
+      - predicates: schema:creator
+        inversepredicates: schema:created
+        objects:
+          value: ex:person/$(leaderId)
+          type: iri
+
+  # Test 5: Language tags with shortcuts (Section 9.6)
+  multilingualContent:
+    sources:
+      - persons-source
+    subjects: ex:person/$(id)
+    predicateobjects:
+      # Language tag shortcut
+      - [schema:description, $(bio_en), en~lang]
+      - [schema:description, $(bio_fr), fr~lang]
+
+  # Test 6: Reference datatype (Section 9.5)
+  dynamicDatatype:
+    sources:
+      - persons-source
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - predicates: ex:dynamicValue
+        objects:
+          value: $(value)
+          datatype: $(valueType)
+
+  # Test 7: External references usage (Section 13)
+  personWithExternal:
+    sources:
+      - persons-source
+    subjects: ex:person/$(id)
+    predicateobjects:
+      - [schema:affiliation, $(_defaultOrganization)]
+      - [schema:nationality, $(_defaultCountry)]
+
+---
+
+# RDF-Star Tests (Section 12)
+
+# Test 8: Quoted triples in subject (current implementation)
+mappings:
+  datasetBaseTM:
+    sources:
+      - ['data_products.csv~csv']
+    subject: ex:dataset/$(dataset_id)
+    predicateobjects:
+      - [a, dcat:Dataset]
+      - [dct:title, $(title)]
+
+  datasetThemeTM:
+    sources:
+      - ['data_products.csv~csv']
+    subject: ex:dataset/$(dataset_id)
+    predicateobjects:
+      - predicates: dcat:theme
+        objects:
+          value: $(theme_uri)
+          type: iri
+
+  # Annotations on quoted triple
+  themeProvenanceTM:
+    sources:
+      - ['lineage.csv~csv']
+    subject:
+      - function: join(quoted=datasetThemeTM, equal(str1=$(dataset_id), str2=$(dataset_id)))
+    predicateobjects:
+      - predicates: prov:wasDerivedFrom
+        objects:
+          value: ex:system/$(source_system)
+          type: iri
+      - [prov:generatedAtTime, $(timestamp), xsd:dateTime]
+      - [ex:confidence, $(confidence), xsd:decimal]
+
