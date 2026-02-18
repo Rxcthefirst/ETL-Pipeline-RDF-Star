@@ -192,7 +192,7 @@ uvicorn.run(app, host="0.0.0.0", port=7879)  # Change port
 pip install fastapi uvicorn pyoxigraph
 
 # Check if files exist
-ls ontology/data_products_ontology.ttl
+ls ontologies/data_products_ontology.ttl
 ls output/output_data_star.trig
 ```
 

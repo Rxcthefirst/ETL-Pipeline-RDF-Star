@@ -3,7 +3,7 @@ FastAPI SPARQL Endpoint Server with RDF-star Support
 ====================================================
 
 This server:
-1. Loads OWL ontology for data products
+1. Loads OWL ontologies for data products
 2. Loads RDF-star instance data with reified statements
 3. Provides SPARQL endpoint at http://localhost:7878/sparql
 4. Supports SPARQL-star queries for provenance and quality metadata
@@ -30,7 +30,7 @@ load_stats: Dict[str, Any] = {}
 
 
 def initialize_store():
-    """Load ontology and instance data into PyOxigraph store"""
+    """Load ontologies and instance data into PyOxigraph store"""
     global store, load_stats
 
     print("="*80)
@@ -49,16 +49,16 @@ def initialize_store():
 
     start_time = time.time()
 
-    # Load ontology
+    # Load ontologies
     try:
-        ontology_path = "ontology/data_products_ontology.ttl"
-        print(f"\n[1/2] Loading ontology from {ontology_path}...")
+        ontology_path = "data/data_products_ontology.ttl"
+        print(f"\n[1/2] Loading ontologies from {ontology_path}...")
         with open(ontology_path, 'rb') as f:
             store.load(f, RdfFormat.TURTLE)
         load_stats['ontology_loaded'] = True
         print(f"      [OK] Ontology loaded successfully")
     except Exception as e:
-        print(f"      [ERROR] Failed to load ontology: {e}")
+        print(f"      [ERROR] Failed to load ontologies: {e}")
         return False
 
     # Load instance data

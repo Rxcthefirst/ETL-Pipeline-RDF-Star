@@ -31,7 +31,7 @@ print()
 differences = [
     ("Semantic Meaning",
      "Just states 'this is a MortgageLoan'",
-     "Explicitly declares 'this is a specific, named individual of type MortgageLoan'"),
+     "Explicitly declares 'this is a specific, named individuals of type MortgageLoan'"),
 
     ("OWL Reasoning",
      "Basic type inference only",
@@ -43,7 +43,7 @@ differences = [
 
     ("Ontology Design",
      "Informal assertion",
-     "Formal ontology commitment - explicit ABox (assertions)"),
+     "Formal ontologies commitment - explicit ABox (assertions)"),
 
     ("Closed World",
      "Assumes what's not stated is unknown",
@@ -69,7 +69,7 @@ uses = [
     "✓ Using OWL reasoners (Pellet, HermiT, FaCT++) for inference",
     "✓ Implementing SWRL rules or SHACL constraints",
     "✓ Publishing Linked Open Data with strict OWL2 compliance",
-    "✓ Integrating with Protégé or other ontology editors",
+    "✓ Integrating with Protégé or other ontologies editors",
     "✓ Distinguishing named entities from blank nodes",
     "✓ Ensuring compatibility with semantic web validators"
 ]

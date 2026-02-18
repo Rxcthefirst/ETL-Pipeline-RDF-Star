@@ -3,7 +3,7 @@ RDF-star Demonstration: Data Products with Governance Metadata
 ==============================================================
 
 This script demonstrates the power of RDF-star by:
-1. Loading an OWL ontology for data products
+1. Loading an OWL ontologies for data products
 2. Loading instance data with RDF-star annotations (provenance & quality)
 3. Running advanced queries that leverage RDF-star features
 
@@ -11,7 +11,7 @@ Key RDF-star Features Demonstrated:
 - Statement-level metadata (who said what, when, with what confidence)
 - Provenance tracking at the triple level
 - Quality metrics on specific assertions
-- Complex queries across ontology and instance data
+- Complex queries across ontologies and instance data
 """
 
 from pyoxigraph import Store, NamedNode, RdfFormat
@@ -31,17 +31,17 @@ store = Store()
 print("Step 1: Loading OWL Ontology...")
 print("-" * 80)
 
-ontology_path = "ontology/data_products_ontology.ttl"
+ontology_path = "ontologies/data_products_ontology.ttl"
 try:
     with open(ontology_path, 'rb') as f:
         store.load(f, RdfFormat.TURTLE)
-    print(f"[OK] Loaded ontology from {ontology_path}")
+    print(f"[OK] Loaded ontologies from {ontology_path}")
 except FileNotFoundError:
     print(f"[X] Ontology file not found: {ontology_path}")
-    print("  Please ensure the ontology file exists.")
+    print("  Please ensure the ontologies file exists.")
     exit(1)
 except SyntaxError as e:
-    print(f"[X] Syntax error in ontology: {e}")
+    print(f"[X] Syntax error in ontologies: {e}")
     print("  There may be an issue with the Turtle syntax.")
     exit(1)
 
@@ -400,7 +400,7 @@ WHERE {
 
 try:
     results = list(store.query(query7))
-    print(f"Agent types in the ontology:")
+    print(f"Agent types in the ontologies:")
     print()
     for result in results:
         cls = str(result['class']).split('/')[-1].split('#')[-1]
@@ -457,7 +457,7 @@ print()
 print("Key Takeaways:")
 print("  ✓ RDF-star allows statement-level metadata (provenance, quality)")
 print("  ✓ Can track WHO said WHAT, WHEN, with WHAT confidence")
-print("  ✓ Enables complex governance queries across ontology + instances")
+print("  ✓ Enables complex governance queries across ontologies + instances")
 print("  ✓ Perfect for data quality, audit trails, and lineage tracking")
 print("="*80)
 

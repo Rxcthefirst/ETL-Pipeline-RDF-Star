@@ -458,7 +458,7 @@ ORDER BY ?class
         assert result is not None, "Query execution failed"
 
         bindings = result['results']['bindings']
-        print(f"\n  âœ“ Found {len(bindings)} ontology classes")
+        print(f"\n  âœ“ Found {len(bindings)} ontologies classes")
 
         for i, b in enumerate(bindings[:5], 1):
             cls = b.get('class', {}).get('value', 'N/A')
@@ -528,7 +528,7 @@ ORDER BY DESC(?instanceCount)
         assert result is not None, "Query execution failed"
 
         bindings = result['results']['bindings']
-        print(f"\n  âœ“ Found {len(bindings)} ontology types with instances")
+        print(f"\n  âœ“ Found {len(bindings)} ontologies types with instances")
 
         for i, b in enumerate(bindings[:10], 1):
             typ = b.get('type', {}).get('value', 'N/A')

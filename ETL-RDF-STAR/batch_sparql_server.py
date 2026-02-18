@@ -60,11 +60,64 @@ load_stats: Dict[str, Any] = {}
 data_file: str = "output/batch_simulation/two_batches.trig"
 
 
-def initialize_store(file_path: str):
-    """Load RDF data into PyOxigraph store."""
-    global store, load_stats, data_file
+def load_rdf_directory_recursive(directory: str, indent: str = "  "):
+    """Recursively load all RDF files from a directory and its subdirectories."""
+    global store
 
-    data_file = file_path
+    for entry in sorted(os.listdir(directory)):
+        filepath = os.path.join(directory, entry)
+
+        if os.path.isdir(filepath):
+            # Recursively process subdirectories
+            print(f"{indent}[DIR] {entry}/")
+            load_rdf_directory_recursive(filepath, indent + "  ")
+        else:
+            # Process RDF files
+            if entry.endswith('.ttl') or entry.endswith('.turtle'):
+                try:
+                    print(f"{indent}Loading: {entry}")
+                    with open(filepath, 'rb') as f:
+                        store.load(f, RdfFormat.TURTLE)
+                    print(f"{indent}  -> loaded successfully")
+                except Exception as e:
+                    print(f"{indent}  -> Warning: Failed to load: {e}")
+            elif entry.endswith('.owl') or entry.endswith('.rdf') or entry.endswith('.xml'):
+                try:
+                    print(f"{indent}Loading: {entry}")
+                    with open(filepath, 'rb') as f:
+                        store.load(f, RdfFormat.RDF_XML)
+                    print(f"{indent}  -> loaded successfully")
+                except Exception as e:
+                    print(f"{indent}  -> Warning: Failed to load: {e}")
+            elif entry.endswith('.trig'):
+                try:
+                    print(f"{indent}Loading: {entry}")
+                    with open(filepath, 'rb') as f:
+                        store.load(f, RdfFormat.TRIG)
+                    print(f"{indent}  -> loaded successfully")
+                except Exception as e:
+                    print(f"{indent}  -> Warning: Failed to load: {e}")
+            elif entry.endswith('.nq') or entry.endswith('.nquads'):
+                try:
+                    print(f"{indent}Loading: {entry}")
+                    with open(filepath, 'rb') as f:
+                        store.load(f, RdfFormat.N_QUADS)
+                    print(f"{indent}  -> loaded successfully")
+                except Exception as e:
+                    print(f"{indent}  -> Warning: Failed to load: {e}")
+            elif entry.endswith('.nt') or entry.endswith('.ntriples'):
+                try:
+                    print(f"{indent}Loading: {entry}")
+                    with open(filepath, 'rb') as f:
+                        store.load(f, RdfFormat.N_TRIPLES)
+                    print(f"{indent}  -> loaded successfully")
+                except Exception as e:
+                    print(f"{indent}  -> Warning: Failed to load: {e}")
+
+
+def initialize_store(rdf_input_dir: str = None):
+    """Load RDF data into PyOxigraph store from rdf-data-input directory."""
+    global store, load_stats, data_file
 
     print("=" * 70)
     print("Initializing Batch SPARQL Endpoint")
@@ -74,22 +127,25 @@ def initialize_store(file_path: str):
     start_time = time.time()
 
     try:
-        print(f"\nLoading data from: {file_path}")
-        with open(file_path, 'rb') as f:
-            store.load(f, RdfFormat.TRIG)
+        # Determine RDF input directory - default to rdf-data-input
+        input_dir = rdf_input_dir if rdf_input_dir else os.path.join(BASE_DIR, "rdf-data-input")
+        data_file = input_dir
 
-        # Also load the data products ontology
-        ontology_path = os.path.join(BASE_DIR, "ontology", "data_products_ontology.ttl")
-        if os.path.exists(ontology_path):
-            print(f"Loading ontology from: {ontology_path}")
-            with open(ontology_path, 'rb') as f:
-                store.load(f, RdfFormat.TURTLE)
-            print("    Ontology loaded successfully")
+        # Recursively load all RDF files from the input directory
+        if os.path.exists(input_dir):
+            print(f"\nLoading RDF files recursively from: {input_dir}")
+            print("  (Place ontologies in /ontologies and instance data in /individuals)\n")
+            load_rdf_directory_recursive(input_dir)
         else:
-            print(f"    Warning: Ontology not found at {ontology_path}")
+            print(f"\n[WARNING] RDF input directory not found: {input_dir}")
+            print("  Creating directory structure...")
+            os.makedirs(os.path.join(input_dir, "ontologies"), exist_ok=True)
+            os.makedirs(os.path.join(input_dir, "individuals"), exist_ok=True)
+            print(f"  Created: {input_dir}/ontologies/")
+            print(f"  Created: {input_dir}/individuals/")
+            print("\n  Place your RDF files in these directories and restart the server.")
 
         load_stats['data_loaded'] = True
-        load_stats['data_file'] = file_path
         load_stats['total_quads'] = len(list(store))
         load_stats['load_time'] = time.time() - start_time
 
@@ -381,10 +437,10 @@ async def execute_sparql(query: str) -> JSONResponse:
         raise HTTPException(status_code=400, detail=f"Query error: {str(e)}")
 
 
-@app.get("/ontology")
+@app.get("/ontologies")
 async def get_ontology_index():
     """
-    Return indexed ontology classes and properties from the loaded data.
+    Return indexed ontologies classes and properties from the loaded data.
     This queries the actual RDF store for owl:Class, rdfs:Class definitions
     and their associated properties.
     """
@@ -504,33 +560,58 @@ async def get_ontology_index():
                     'range': str(row['range']) if row['range'] else None
                 })
 
-        return JSONResponse({
-            "classes": classes,
-            "objectProperties": object_properties,
-            "datatypeProperties": datatype_properties,
-            "counts": {
-                "classes": len(classes),
-                "objectProperties": len(object_properties),
-                "datatypeProperties": len(datatype_properties)
+        return JSONResponse(
+            content={
+                "classes": classes,
+                "objectProperties": object_properties,
+                "datatypeProperties": datatype_properties,
+                "counts": {
+                    "classes": len(classes),
+                    "objectProperties": len(object_properties),
+                    "datatypeProperties": len(datatype_properties)
+                }
+            },
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
             }
-        })
+        )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error querying ontology: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error querying ontologies: {str(e)}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Batch SPARQL Server")
-    parser.add_argument("--data", "-d",
-                        default="output/batch_simulation/two_batches.trig",
-                        help="Path to RDF data file (TriG format)")
+    parser = argparse.ArgumentParser(
+        description="Batch SPARQL Server",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Directory Structure:
+  Place your RDF files in the rdf-data-input directory:
+  
+    rdf-data-input/
+    ├── ontologies/     <- Place ontology files here (.ttl, .owl, .rdf)
+    └── individuals/    <- Place instance/data files here (.ttl, .trig, .nq)
+
+  All files will be loaded recursively on server startup.
+
+Examples:
+    python batch_sparql_server.py
+    python batch_sparql_server.py --port 8080
+    python batch_sparql_server.py --rdf-input /path/to/custom/rdf-folder
+        """
+    )
+    parser.add_argument("--rdf-input", "-r",
+                        default=None,
+                        help="Path to RDF input directory (default: ./rdf-data-input)")
     parser.add_argument("--host", default="0.0.0.0", help="Host to bind")
     parser.add_argument("--port", "-p", type=int, default=7878, help="Port")
 
     args = parser.parse_args()
 
     # Initialize store before starting server
-    if not initialize_store(args.data):
+    if not initialize_store(args.rdf_input):
         print("[ERROR] Failed to initialize store. Exiting.")
         return
 
@@ -542,4 +623,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -49,21 +49,31 @@ class YARRRMLBuilder {
     }
 
     /**
-     * Load ontology classes and properties from the server's /ontology endpoint
+     * Load ontology classes and properties from the server's /ontologies endpoint
      */
     async loadOntologyFromServer() {
         try {
-            const response = await fetch('/ontology');
+            // Add cache-busting parameter to ensure fresh data
+            const cacheBuster = Date.now();
+            const response = await fetch(`/ontologies?_=${cacheBuster}`, {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            });
             if (!response.ok) {
-                throw new Error('Failed to load ontology from server');
+                throw new Error(`Failed to load ontology from server: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('Raw ontology response from server:', data);
 
             // Check if we got any classes
             if (!data.classes || data.classes.length === 0) {
-                console.log('Server returned no classes, using fallback ontology');
-                this.loadFallbackOntology();
+                console.warn('Server returned no ontology classes');
+                this.showOntologyError('No ontology classes found. Make sure your ontology files are loaded on the server.');
+                this.ontology = { classes: [], objectProperties: [], dataProperties: {} };
+                this.updateOntologyStats();
                 return;
             }
 
@@ -149,74 +159,37 @@ class YARRRMLBuilder {
 
         } catch (error) {
             console.error('Error loading ontology:', error);
-            this.loadFallbackOntology();
+            this.showOntologyError(`Failed to load ontology: ${error.message}. Is the server running?`);
+            this.ontology = { classes: [], objectProperties: [], dataProperties: {} };
+            this.updateOntologyStats();
         }
     }
 
     /**
-     * Load a fallback sample ontology when server is unavailable
+     * Show an error message in the ontology panel
      */
-    loadFallbackOntology() {
-        console.log('Loading fallback ontology');
-
-        // Show loading message in details panel
+    showOntologyError(message) {
         const details = document.getElementById('ontology-details');
         if (details) {
-            details.innerHTML = '<div class="empty-state small"><p>Loading fallback ontology...</p></div>';
+            details.innerHTML = `
+                <div class="empty-state error">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <p>${message}</p>
+                    <button class="btn btn-small" onclick="yarrrmlBuilder.loadOntologyFromServer()">
+                        Retry
+                    </button>
+                </div>
+            `;
         }
 
-        this.ontology = {
-            classes: [
-                { id: 'Dataset', label: 'Dataset', prefix: 'dcat', uri: 'http://www.w3.org/ns/dcat#Dataset', parent: null },
-                { id: 'Theme', label: 'Theme', prefix: 'dcat', uri: 'http://www.w3.org/ns/dcat#Theme', parent: null },
-                { id: 'Organization', label: 'Organization', prefix: 'ex', uri: 'http://example.org/ontology#Organization', parent: null },
-                { id: 'DataCatalogSystem', label: 'DataCatalogSystem', prefix: 'ex', uri: 'http://example.org/ontology#DataCatalogSystem', parent: null },
-                { id: 'Activity', label: 'Activity', prefix: 'prov', uri: 'http://www.w3.org/ns/prov#Activity', parent: null },
-                { id: 'Agent', label: 'Agent', prefix: 'prov', uri: 'http://www.w3.org/ns/prov#Agent', parent: null }
-            ],
-            objectProperties: [
-                { uri: 'http://www.w3.org/ns/dcat#theme', label: 'theme', from: 'Dataset', to: 'Theme', prefix: 'dcat' },
-                { uri: 'http://www.w3.org/ns/prov#wasDerivedFrom', label: 'wasDerivedFrom', from: 'Dataset', to: 'Dataset', prefix: 'prov' },
-                { uri: 'http://www.w3.org/ns/prov#wasGeneratedBy', label: 'wasGeneratedBy', from: 'Dataset', to: 'Activity', prefix: 'prov' },
-                { uri: 'http://www.w3.org/ns/prov#wasAttributedTo', label: 'wasAttributedTo', from: 'Dataset', to: 'Agent', prefix: 'prov' },
-                { uri: 'http://www.w3.org/ns/prov#used', label: 'used', from: 'Activity', to: 'Dataset', prefix: 'prov' },
-                { uri: 'http://purl.org/dc/terms/publisher', label: 'publisher', from: 'Dataset', to: 'Organization', prefix: 'dct' }
-            ],
-            dataProperties: {
-                'Dataset': [
-                    { name: 'title', uri: 'http://purl.org/dc/terms/title', type: 'string', prefix: 'dct' },
-                    { name: 'issued', uri: 'http://purl.org/dc/terms/issued', type: 'date', prefix: 'dct' },
-                    { name: 'description', uri: 'http://purl.org/dc/terms/description', type: 'string', prefix: 'dct' }
-                ],
-                'Organization': [
-                    { name: 'name', uri: 'http://xmlns.com/foaf/0.1/name', type: 'string', prefix: 'foaf' }
-                ],
-                'Activity': [
-                    { name: 'startedAtTime', uri: 'http://www.w3.org/ns/prov#startedAtTime', type: 'dateTime', prefix: 'prov' },
-                    { name: 'endedAtTime', uri: 'http://www.w3.org/ns/prov#endedAtTime', type: 'dateTime', prefix: 'prov' }
-                ]
-            }
-        };
-
-        console.log(`Fallback ontology loaded: ${this.ontology.classes.length} classes`);
-
-        this.buildSearchIndex();
-        this.updateOntologyStats();
-
-        // Ensure graph container exists and render
-        setTimeout(() => {
-            const container = document.getElementById('ontology-graph');
-            if (container) {
-                console.log('Container found, initializing graph');
-                this.initOntologyGraph();
-                this.visibleClasses.clear();
-                this.ontology.classes.forEach(c => this.visibleClasses.add(c.id));
-                console.log(`Visible classes: ${Array.from(this.visibleClasses).join(', ')}`);
-                this.renderOntologyGraph();
-            } else {
-                console.error('Ontology graph container not found');
-            }
-        }, 200);
+        // Also clear the graph
+        const svg = d3.select('#ontology-canvas');
+        const g = svg.select('g.ontology-content');
+        if (g.node()) {
+            g.selectAll('*').remove();
+        }
     }
 
     extractLocalName(uri) {

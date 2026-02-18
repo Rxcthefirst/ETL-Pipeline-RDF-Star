@@ -15,6 +15,11 @@ class SPARQLClient {
         this.transform = d3.zoomIdentity;
         this.currentMode = 'explorer'; // 'explorer' or 'yarrrml'
 
+        // Pagination state
+        this.currentPage = 1;
+        this.pageSize = 50;
+        this.totalResults = 0;
+
         this.init();
     }
 
@@ -346,6 +351,7 @@ ORDER BY ?timestamp`
     }
 
     renderResults(data) {
+        this.currentPage = 1; // Reset pagination on new results
         this.renderTable(data);
         this.renderJSON(data);
         this.renderGraph(data);
@@ -360,9 +366,16 @@ ORDER BY ?timestamp`
         }
 
         const vars = data.head.vars;
-        const bindings = data.results.bindings;
+        const allBindings = data.results.bindings;
+        this.totalResults = allBindings.length;
 
-        let html = '<table class="results-table"><thead><tr>';
+        // Calculate pagination
+        const totalPages = Math.ceil(this.totalResults / this.pageSize);
+        const startIdx = (this.currentPage - 1) * this.pageSize;
+        const endIdx = Math.min(startIdx + this.pageSize, this.totalResults);
+        const bindings = allBindings.slice(startIdx, endIdx);
+
+        let html = '<div class="table-wrapper"><table class="results-table"><thead><tr>';
         vars.forEach(v => {
             html += `<th>${v}</th>`;
         });
@@ -386,7 +399,41 @@ ORDER BY ?timestamp`
             html += '</tr>';
         });
 
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
+
+        // Add pagination controls
+        html += `
+            <div class="pagination">
+                <div class="pagination-info">
+                    Showing ${startIdx + 1}-${endIdx} of ${this.totalResults} results
+                </div>
+                <div class="pagination-controls">
+                    <div class="page-size-selector">
+                        <label>Rows:</label>
+                        <select onchange="sparqlClient.changePageSize(this.value)">
+                            <option value="25" ${this.pageSize === 25 ? 'selected' : ''}>25</option>
+                            <option value="50" ${this.pageSize === 50 ? 'selected' : ''}>50</option>
+                            <option value="100" ${this.pageSize === 100 ? 'selected' : ''}>100</option>
+                            <option value="250" ${this.pageSize === 250 ? 'selected' : ''}>250</option>
+                        </select>
+                    </div>
+                    <button onclick="sparqlClient.goToPage(1)" ${this.currentPage === 1 ? 'disabled' : ''}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"/></svg>
+                    </button>
+                    <button onclick="sparqlClient.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                    </button>
+                    <span class="page-info">Page ${this.currentPage} of ${totalPages}</span>
+                    <button onclick="sparqlClient.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </button>
+                    <button onclick="sparqlClient.goToPage(${totalPages})" ${this.currentPage === totalPages ? 'disabled' : ''}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+
         container.innerHTML = html;
 
         // Bind click events for URIs
@@ -397,9 +444,24 @@ ORDER BY ?timestamp`
         });
     }
 
+    goToPage(page) {
+        const totalPages = Math.ceil(this.totalResults / this.pageSize);
+        if (page >= 1 && page <= totalPages) {
+            this.currentPage = page;
+            this.renderTable(this.currentResults);
+        }
+    }
+
+    changePageSize(size) {
+        this.pageSize = parseInt(size);
+        this.currentPage = 1; // Reset to first page
+        this.renderTable(this.currentResults);
+    }
+
     renderJSON(data) {
-        const container = document.getElementById('json-output');
-        container.innerHTML = this.syntaxHighlight(JSON.stringify(data, null, 2));
+        const container = document.getElementById('json-container');
+        const jsonContent = this.syntaxHighlight(JSON.stringify(data, null, 2));
+        container.innerHTML = `<div class="json-wrapper"><pre id="json-output">${jsonContent}</pre></div>`;
     }
 
     initGraph() {

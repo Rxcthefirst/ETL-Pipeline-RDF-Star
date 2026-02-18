@@ -11,11 +11,11 @@ ETL Engine for YARRRML-star to RDF-star using polars and pyoxigraph
 
 This script follwos the eEXACT same reification pattern as rdf_star_transform_v2.py:
 - Each dataset is an owl:NamedIndividual
-- Each dataset is typed as meta:Dataset (linking to ontology concept)
+- Each dataset is typed as meta:Dataset (linking to ontologies concept)
 - Every triple gets rdf:reifies provenance annotations
 - Uses BlankNode reifier with full provenance chain
 
-This enables AI grounding by linking instance data to ontology definitions, and allows for rich metadata on every triple.
+This enables AI grounding by linking instance data to ontologies definitions, and allows for rich metadata on every triple.
 """
 import yaml
 import polars as pl
@@ -273,7 +273,7 @@ def main(config_path):
 
             # ==================================================
             # Triple 1: rdf:type owl:NamedIndividual
-            # This marks it as an instance in the ontology, enabling AI grounding to ontology concepts
+            # This marks it as an instance in the ontologies, enabling AI grounding to ontologies concepts
             # ==================================================
             type_individual_triple = Triple(
                 subj,
@@ -289,7 +289,7 @@ def main(config_path):
 
             # ==================================================
             # Triple 2: rdf:type meta:Dataset
-            # This links the instance to the meta:Dataset concept in the ontology, enabling semantic reasoning
+            # This links the instance to the meta:Dataset concept in the ontologies, enabling semantic reasoning
             # ==================================================
             type_dataset_triple = Triple(
                 subj,

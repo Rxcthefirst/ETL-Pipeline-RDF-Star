@@ -330,7 +330,7 @@ LIMIT 10
 # ============================================================================
 
 class TestOntologyQueries:
-    """Test ontology alignment queries"""
+    """Test ontologies alignment queries"""
 
     def test_01_list_classes(self, check_server):
         """Test listing OWL classes"""
@@ -523,7 +523,7 @@ def test_final_summary(check_server):
     print("If many tests show empty bindings:")
     print("  1. Check if server loaded data correctly")
     print("  2. Verify RDF-star syntax is supported")
-    print("  3. Check if ontology/instance files exist")
+    print("  3. Check if ontologies/instance files exist")
     print("  4. Try simpler queries first (test_04_sample_any_data)")
     print("="*80 + "\n")
 

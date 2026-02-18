@@ -15,11 +15,11 @@ from pathlib import Path
 app = FastAPI(title="RDF-star Data Products SPARQL Endpoint")
 store = Store()
 
-# Load ontology and RDF-star instance data
+# Load ontologies and RDF-star instance data
 print("Loading data into PyOxigraph store...")
 
-# Load ontology
-ontology_path = Path("../ETL-RDF-STAR/ontology/data_products_ontology.ttl")
+# Load ontologies
+ontology_path = Path("../ETL-RDF-STAR/data/data_products_ontology.ttl")
 if ontology_path.exists():
     with open(ontology_path, 'rb') as f:
         store.load(f, RdfFormat.TURTLE)
