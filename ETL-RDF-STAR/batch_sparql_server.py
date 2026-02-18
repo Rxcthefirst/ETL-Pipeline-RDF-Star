@@ -78,6 +78,16 @@ def initialize_store(file_path: str):
         with open(file_path, 'rb') as f:
             store.load(f, RdfFormat.TRIG)
 
+        # Also load the data products ontology
+        ontology_path = os.path.join(BASE_DIR, "ontology", "data_products_ontology.ttl")
+        if os.path.exists(ontology_path):
+            print(f"Loading ontology from: {ontology_path}")
+            with open(ontology_path, 'rb') as f:
+                store.load(f, RdfFormat.TURTLE)
+            print("    Ontology loaded successfully")
+        else:
+            print(f"    Warning: Ontology not found at {ontology_path}")
+
         load_stats['data_loaded'] = True
         load_stats['data_file'] = file_path
         load_stats['total_quads'] = len(list(store))
@@ -369,6 +379,144 @@ async def execute_sparql(query: str) -> JSONResponse:
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Query error: {str(e)}")
+
+
+@app.get("/ontology")
+async def get_ontology_index():
+    """
+    Return indexed ontology classes and properties from the loaded data.
+    This queries the actual RDF store for owl:Class, rdfs:Class definitions
+    and their associated properties.
+    """
+    if store is None:
+        raise HTTPException(status_code=500, detail="Store not initialized")
+
+    try:
+        # Query for classes (owl:Class and rdfs:Class)
+        class_query = """
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        
+        SELECT DISTINCT ?class ?label ?comment ?parent
+        WHERE {
+            { ?class a owl:Class } UNION { ?class a rdfs:Class }
+            OPTIONAL { ?class rdfs:label ?label }
+            OPTIONAL { ?class rdfs:comment ?comment }
+            OPTIONAL { ?class rdfs:subClassOf ?parent }
+            FILTER(!isBlank(?class))
+        }
+        ORDER BY ?class
+        """
+
+        classes = []
+        class_results = store.query(class_query)
+        for row in class_results:
+            class_uri = str(row['class'])
+            classes.append({
+                'uri': class_uri,
+                'label': str(row['label']) if row['label'] else class_uri.split('#')[-1].split('/')[-1],
+                'comment': str(row['comment']) if row['comment'] else None,
+                'parent': str(row['parent']) if row['parent'] else None
+            })
+
+        # Query for object properties
+        obj_prop_query = """
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        
+        SELECT DISTINCT ?prop ?label ?domain ?range
+        WHERE {
+            ?prop a owl:ObjectProperty .
+            OPTIONAL { ?prop rdfs:label ?label }
+            OPTIONAL { ?prop rdfs:domain ?domain }
+            OPTIONAL { ?prop rdfs:range ?range }
+            FILTER(!isBlank(?prop))
+        }
+        ORDER BY ?prop
+        """
+
+        object_properties = []
+        obj_results = store.query(obj_prop_query)
+        for row in obj_results:
+            prop_uri = str(row['prop'])
+            object_properties.append({
+                'uri': prop_uri,
+                'label': str(row['label']) if row['label'] else prop_uri.split('#')[-1].split('/')[-1],
+                'domain': str(row['domain']) if row['domain'] else None,
+                'range': str(row['range']) if row['range'] else None
+            })
+
+        # Query for datatype properties
+        data_prop_query = """
+        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        
+        SELECT DISTINCT ?prop ?label ?domain ?range
+        WHERE {
+            ?prop a owl:DatatypeProperty .
+            OPTIONAL { ?prop rdfs:label ?label }
+            OPTIONAL { ?prop rdfs:domain ?domain }
+            OPTIONAL { ?prop rdfs:range ?range }
+            FILTER(!isBlank(?prop))
+        }
+        ORDER BY ?prop
+        """
+
+        datatype_properties = []
+        data_results = store.query(data_prop_query)
+        for row in data_results:
+            prop_uri = str(row['prop'])
+            datatype_properties.append({
+                'uri': prop_uri,
+                'label': str(row['label']) if row['label'] else prop_uri.split('#')[-1].split('/')[-1],
+                'domain': str(row['domain']) if row['domain'] else None,
+                'range': str(row['range']) if row['range'] else None
+            })
+
+        # Also get rdf:Property definitions
+        rdf_prop_query = """
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        
+        SELECT DISTINCT ?prop ?label ?domain ?range
+        WHERE {
+            ?prop a rdf:Property .
+            OPTIONAL { ?prop rdfs:label ?label }
+            OPTIONAL { ?prop rdfs:domain ?domain }
+            OPTIONAL { ?prop rdfs:range ?range }
+            FILTER(!isBlank(?prop))
+        }
+        ORDER BY ?prop
+        """
+
+        rdf_results = store.query(rdf_prop_query)
+        for row in rdf_results:
+            prop_uri = str(row['prop'])
+            # Check if already in datatype or object properties
+            if not any(p['uri'] == prop_uri for p in datatype_properties + object_properties):
+                datatype_properties.append({
+                    'uri': prop_uri,
+                    'label': str(row['label']) if row['label'] else prop_uri.split('#')[-1].split('/')[-1],
+                    'domain': str(row['domain']) if row['domain'] else None,
+                    'range': str(row['range']) if row['range'] else None
+                })
+
+        return JSONResponse({
+            "classes": classes,
+            "objectProperties": object_properties,
+            "datatypeProperties": datatype_properties,
+            "counts": {
+                "classes": len(classes),
+                "objectProperties": len(object_properties),
+                "datatypeProperties": len(datatype_properties)
+            }
+        })
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error querying ontology: {str(e)}")
 
 
 def main():

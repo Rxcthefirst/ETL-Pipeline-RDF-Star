@@ -1,5 +1,5 @@
 /**
- * SPARQL Client - Interactive Graph Visualization
+ * SPARQL Client - Enhanced with Competing Claims & YARRRML Builder
  * Neo4j-style interface for RDF knowledge graphs
  */
 
@@ -13,6 +13,7 @@ class SPARQLClient {
         this.svg = null;
         this.zoom = null;
         this.transform = d3.zoomIdentity;
+        this.currentMode = 'explorer'; // 'explorer' or 'yarrrml'
 
         this.init();
     }
@@ -60,10 +61,138 @@ class SPARQLClient {
         document.getElementById('zoom-in').addEventListener('click', () => this.zoomGraph(1.3));
         document.getElementById('zoom-out').addEventListener('click', () => this.zoomGraph(0.7));
         document.getElementById('zoom-fit').addEventListener('click', () => this.fitGraph());
+
+        // Mode switching
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.switchMode(btn.dataset.mode));
+        });
+    }
+
+    switchMode(mode) {
+        this.currentMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+
+        document.getElementById('explorer-mode').style.display = mode === 'explorer' ? 'flex' : 'none';
+        document.getElementById('yarrrml-mode').style.display = mode === 'yarrrml' ? 'flex' : 'none';
+
+        if (mode === 'yarrrml') {
+            // Defer init until after DOM is updated and visible
+            requestAnimationFrame(() => {
+                yarrrmlBuilder.init();
+            });
+        }
     }
 
     loadQueryTemplates() {
         const templates = [
+            {
+                name: '1.1 Count All Datasets',
+                query: `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+
+SELECT (COUNT(?dataset) as ?count)
+WHERE {
+    ?dataset a dcat:Dataset .
+}`
+            },
+            {
+                name: '1.2 List First 10 Datasets',
+                query: `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+
+SELECT ?dataset ?title ?issued
+WHERE {
+    ?dataset a dcat:Dataset ;
+             dct:title ?title ;
+             dct:issued ?issued .
+}
+ORDER BY ?dataset
+LIMIT 10`
+            },
+            {
+                name: '1.3 Count All Activities',
+                query: `PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT (COUNT(DISTINCT ?activity) as ?count)
+WHERE {
+    ?activity a prov:Activity .
+}`
+            },
+            {
+                name: '2.1 High-Confidence Theme Assignments',
+                query: `PREFIX ex: <http://example.org/>
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?dataset ?title ?theme ?confidence ?source
+WHERE {
+    ?dataset dcat:theme ?theme ;
+             dct:title ?title .
+
+    <<?dataset dcat:theme ?theme>> ex:confidence ?confidence ;
+                                    prov:wasDerivedFrom ?source .
+
+    FILTER(?confidence > 0.90)
+}
+ORDER BY DESC(?confidence)
+LIMIT 20`
+            },
+            {
+                name: '2.2 Dataset Lineage Chain',
+                query: `PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?dataset ?title ?derivedFrom ?activity
+WHERE {
+    ?dataset a dcat:Dataset ;
+             dct:title ?title ;
+             prov:wasDerivedFrom ?derivedFrom .
+
+    OPTIONAL { ?dataset prov:wasGeneratedBy ?activity }
+}
+LIMIT 20`
+            },
+            {
+                name: '3.1 Quality Score Distribution',
+                query: `PREFIX ex: <http://example.org/>
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dqv: <http://www.w3.org/ns/dqv#>
+
+SELECT ?qualityLevel (COUNT(?dataset) as ?count)
+WHERE {
+    ?dataset a dcat:Dataset .
+    ?dataset ex:qualityScore ?score .
+    BIND(
+        IF(?score >= 0.9, "Excellent",
+        IF(?score >= 0.7, "Good",
+        IF(?score >= 0.5, "Fair", "Poor")))
+        AS ?qualityLevel
+    )
+}
+GROUP BY ?qualityLevel
+ORDER BY DESC(?count)`
+            },
+            {
+                name: '4.1 Provenance with Confidence',
+                query: `PREFIX ex: <http://example.org/>
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?dataset ?title ?source ?confidence ?timestamp
+WHERE {
+    ?dataset a dcat:Dataset ;
+             dct:title ?title .
+
+    <<?dataset prov:wasDerivedFrom ?source>> ex:confidence ?confidence ;
+                                              prov:generatedAtTime ?timestamp .
+}
+ORDER BY DESC(?confidence)
+LIMIT 20`
+            },
             {
                 name: 'All Customers (Batch 1)',
                 query: `SELECT ?customer ?name ?score
@@ -137,13 +266,14 @@ ORDER BY ?name`
             },
             {
                 name: 'All Batches',
-                query: `SELECT ?batch ?batchNumber ?status ?created
+                query: `SELECT ?batch ?batchNumber ?status ?created ?description
 WHERE {
     GRAPH <http://example.org/graph/metadata> {
         ?batch a <http://example.org/Batch> ;
                <http://example.org/batchNumber> ?batchNumber ;
                <http://example.org/status> ?status .
         OPTIONAL { ?batch <http://purl.org/dc/terms/created> ?created }
+        OPTIONAL { ?batch <http://purl.org/dc/terms/description> ?description }
     }
 }
 ORDER BY DESC(?batchNumber)`
@@ -262,7 +392,7 @@ ORDER BY ?timestamp`
         // Bind click events for URIs
         container.querySelectorAll('.uri-link').forEach(link => {
             link.addEventListener('click', () => {
-                this.selectNode(link.dataset.uri);
+                this.selectNodeWithCompetingClaims(link.dataset.uri);
             });
         });
     }
@@ -274,8 +404,8 @@ ORDER BY ?timestamp`
 
     initGraph() {
         const container = document.getElementById('graph-container');
-        const width = container.clientWidth;
-        const height = container.clientHeight;
+        const width = container.clientWidth || 800;
+        const height = container.clientHeight || 500;
 
         this.svg = d3.select('#graph-canvas')
             .attr('width', width)
@@ -323,8 +453,8 @@ ORDER BY ?timestamp`
         const g = this.svg.select('g');
         g.selectAll('*').remove();
 
-        const width = this.svg.attr('width');
-        const height = this.svg.attr('height');
+        const width = parseInt(this.svg.attr('width')) || 800;
+        const height = parseInt(this.svg.attr('height')) || 500;
 
         // Create simulation
         this.simulation = d3.forceSimulation(this.graphData.nodes)
@@ -366,12 +496,12 @@ ORDER BY ?timestamp`
                 .on('start', (event, d) => this.dragStarted(event, d))
                 .on('drag', (event, d) => this.dragged(event, d))
                 .on('end', (event, d) => this.dragEnded(event, d)))
-            .on('click', (event, d) => this.selectNode(d.id));
+            .on('click', (event, d) => this.selectNodeWithCompetingClaims(d.id));
 
         // Node circles
         nodes.append('circle')
             .attr('r', 25)
-            .attr('fill', d => d.type === 'Person' ? '#4fc3f7' : '#ff9800')
+            .attr('fill', d => this.getNodeColor(d.type))
             .attr('stroke', '#fff')
             .attr('stroke-width', 2);
 
@@ -408,38 +538,104 @@ ORDER BY ?timestamp`
         });
     }
 
+    getNodeColor(type) {
+        const colors = {
+            'Person': '#4fc3f7',
+            'Source': '#ff9800',
+            'Batch': '#9c27b0',
+            'Dataset': '#e91e63',
+            'Activity': '#ff5722',
+            'Resource': '#4caf50'
+        };
+        return colors[type] || colors['Resource'];
+    }
+
     extractGraphData(data) {
         const nodes = new Map();
         const edges = [];
+        const edgeSet = new Set(); // Track unique edges
 
         const vars = data.head.vars;
         const bindings = data.results.bindings;
 
+        // Check if this looks like an s/p/o query
+        const hasSubject = vars.includes('s') || vars.includes('subject');
+        const hasPredicate = vars.includes('p') || vars.includes('predicate');
+        const hasObject = vars.includes('o') || vars.includes('object');
+        const isSPOQuery = hasSubject && hasPredicate && hasObject;
+
         bindings.forEach(row => {
-            // Find URI variables (potential nodes)
-            vars.forEach(v => {
-                const cell = row[v];
-                if (cell?.type === 'uri' && !cell.value.includes('schema.org') &&
-                    !cell.value.includes('w3.org') && !cell.value.includes('xmlns.com')) {
-                    if (!nodes.has(cell.value)) {
-                        const label = this.extractLabel(cell.value);
-                        nodes.set(cell.value, {
-                            id: cell.value,
+            // Handle s/p/o queries specially
+            if (isSPOQuery) {
+                const sVar = vars.includes('s') ? 's' : 'subject';
+                const pVar = vars.includes('p') ? 'p' : 'predicate';
+                const oVar = vars.includes('o') ? 'o' : 'object';
+
+                const subject = row[sVar];
+                const predicate = row[pVar];
+                const object = row[oVar];
+
+                // Add subject as node if it's a URI
+                if (subject?.type === 'uri') {
+                    if (!nodes.has(subject.value)) {
+                        const label = this.extractLabel(subject.value);
+                        nodes.set(subject.value, {
+                            id: subject.value,
                             label: label,
-                            type: this.inferType(v, row),
-                            properties: this.extractProperties(row, vars)
+                            type: this.inferTypeFromUri(subject.value),
+                            properties: {}
                         });
                     }
                 }
-            });
 
-            // Look for relationships (subject-predicate-object patterns)
-            if (row.customer && row.source) {
-                edges.push({
-                    source: row.customer.value,
-                    target: row.source.value,
-                    label: 'derivedFrom'
+                // Add object as node if it's a URI (object property)
+                if (object?.type === 'uri') {
+                    if (!nodes.has(object.value)) {
+                        const label = this.extractLabel(object.value);
+                        nodes.set(object.value, {
+                            id: object.value,
+                            label: label,
+                            type: this.inferTypeFromUri(object.value),
+                            properties: {}
+                        });
+                    }
+
+                    // Create edge between subject and object
+                    if (subject?.type === 'uri' && predicate?.value) {
+                        const predLabel = this.extractLabel(predicate.value);
+                        // Skip rdf:type predicates for edges
+                        if (!predicate.value.includes('rdf-syntax-ns#type')) {
+                            const edgeKey = `${subject.value}|${predicate.value}|${object.value}`;
+                            if (!edgeSet.has(edgeKey)) {
+                                edgeSet.add(edgeKey);
+                                edges.push({
+                                    source: subject.value,
+                                    target: object.value,
+                                    label: predLabel
+                                });
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Generic handling for non-SPO queries
+                vars.forEach(v => {
+                    const cell = row[v];
+                    if (cell?.type === 'uri' && !this.isCommonVocabUri(cell.value)) {
+                        if (!nodes.has(cell.value)) {
+                            const label = this.extractLabel(cell.value);
+                            nodes.set(cell.value, {
+                                id: cell.value,
+                                label: label,
+                                type: this.inferType(v, row),
+                                properties: this.extractProperties(row, vars)
+                            });
+                        }
+                    }
                 });
+
+                // Look for relationships based on common patterns
+                this.detectRelationships(row, vars, nodes, edges, edgeSet);
             }
         });
 
@@ -449,15 +645,58 @@ ORDER BY ?timestamp`
         };
     }
 
+    isCommonVocabUri(uri) {
+        const vocabs = ['schema.org', 'w3.org/1999', 'w3.org/2000', 'w3.org/2001', 'xmlns.com'];
+        return vocabs.some(v => uri.includes(v));
+    }
+
+    inferTypeFromUri(uri) {
+        if (uri.includes('customer') || uri.includes('person') || uri.includes('Person')) return 'Person';
+        if (uri.includes('source') || uri.includes('Source')) return 'Source';
+        if (uri.includes('batch') || uri.includes('Batch')) return 'Batch';
+        if (uri.includes('dataset') || uri.includes('Dataset')) return 'Dataset';
+        if (uri.includes('activity') || uri.includes('Activity')) return 'Activity';
+        return 'Resource';
+    }
+
+    detectRelationships(row, vars, nodes, edges, edgeSet) {
+        // Look for pairs of URI variables that might be related
+        const uriVars = vars.filter(v => row[v]?.type === 'uri' && !this.isCommonVocabUri(row[v].value));
+
+        // Common relationship patterns
+        const patterns = [
+            ['customer', 'source'],
+            ['subject', 'object'],
+            ['dataset', 'source'],
+            ['entity', 'related'],
+            ['from', 'to']
+        ];
+
+        patterns.forEach(([fromVar, toVar]) => {
+            if (row[fromVar]?.type === 'uri' && row[toVar]?.type === 'uri') {
+                const edgeKey = `${row[fromVar].value}|${row[toVar].value}`;
+                if (!edgeSet.has(edgeKey)) {
+                    edgeSet.add(edgeKey);
+                    edges.push({
+                        source: row[fromVar].value,
+                        target: row[toVar].value,
+                        label: 'relatedTo'
+                    });
+                }
+            }
+        });
+    }
+
     extractLabel(uri) {
         const parts = uri.split(/[#/]/);
         return parts[parts.length - 1] || uri;
     }
 
     inferType(varName, row) {
-        if (varName === 'customer' || row.name) return 'Person';
+        if (varName === 'customer' || varName === 'person' || row.name) return 'Person';
         if (varName === 'source') return 'Source';
         if (varName === 'batch') return 'Batch';
+        if (varName === 'dataset') return 'Dataset';
         return 'Resource';
     }
 
@@ -474,16 +713,19 @@ ORDER BY ?timestamp`
         return props;
     }
 
-    async selectNode(uri) {
+    /**
+     * Select a node and show ALL competing claims/values across batches
+     */
+    async selectNodeWithCompetingClaims(uri) {
         this.selectedNode = uri;
         const panel = document.querySelector('.details-panel');
         panel.classList.remove('collapsed');
 
-        // Query for full node details with provenance
+        // Query for ALL values across ALL graphs with full provenance
         const query = `
-SELECT ?predicate ?object ?source ?confidence ?timestamp
+SELECT ?graph ?predicate ?object ?source ?confidence ?timestamp
 WHERE {
-    GRAPH ?g {
+    GRAPH ?graph {
         <${uri}> ?predicate ?object .
         OPTIONAL {
             ?reifier <http://www.w3.org/1999/02/22-rdf-syntax-ns#reifies> ?triple ;
@@ -492,8 +734,9 @@ WHERE {
             OPTIONAL { ?reifier <http://www.w3.org/ns/prov#generatedAtTime> ?timestamp }
         }
     }
+    FILTER(?graph != <http://example.org/graph/metadata>)
 }
-ORDER BY ?predicate`;
+ORDER BY ?predicate ?timestamp`;
 
         try {
             const response = await fetch(this.endpoint, {
@@ -503,153 +746,175 @@ ORDER BY ?predicate`;
             });
 
             const data = await response.json();
-            this.renderNodeDetails(uri, data);
+            this.renderNodeDetailsWithCompetingClaims(uri, data);
         } catch (error) {
             console.error('Error loading node details:', error);
         }
     }
 
-    renderNodeDetails(uri, data) {
+    /**
+     * Render node details showing competing claims for each property
+     */
+    renderNodeDetailsWithCompetingClaims(uri, data) {
         const content = document.querySelector('.details-content');
         const label = this.extractLabel(uri);
 
-        // Group properties by predicate
-        const properties = new Map();
-        const provenanceMap = new Map();
+        // Group by predicate, then collect ALL values with provenance
+        const propertyMap = new Map();
+        let nodeType = null;
 
         if (data.results?.bindings) {
             data.results.bindings.forEach(row => {
                 const pred = row.predicate?.value;
                 const obj = row.object;
+                const graph = row.graph?.value;
 
-                if (pred && obj) {
-                    const predLabel = this.extractLabel(pred);
+                if (!pred || !obj) return;
 
-                    // Skip RDF type predicates in object properties
-                    if (pred.includes('rdf-syntax-ns#type') ||
-                        pred.includes('reifies')) {
-                        if (pred.includes('type') && obj.type === 'uri') {
-                            // Store type separately
-                            properties.set('_type', obj.value);
-                        }
-                        return;
-                    }
+                const predLabel = this.extractLabel(pred);
 
-                    // Data properties (literals)
-                    if (obj.type === 'literal') {
-                        if (!properties.has(predLabel)) {
-                            properties.set(predLabel, {
-                                value: obj.value,
-                                datatype: obj.datatype,
-                                provenance: []
-                            });
-                        }
-
-                        // Add provenance if available
-                        if (row.source?.value) {
-                            properties.get(predLabel).provenance.push({
-                                source: row.source.value,
-                                confidence: row.confidence?.value,
-                                timestamp: row.timestamp?.value
-                            });
-                        }
-                    }
+                // Handle type separately
+                if (pred.includes('rdf-syntax-ns#type') && obj.type === 'uri') {
+                    nodeType = this.extractLabel(obj.value);
+                    return;
                 }
+
+                // Skip reification predicates
+                if (pred.includes('reifies')) return;
+
+                // Only show data properties (literals)
+                if (obj.type !== 'literal') return;
+
+                if (!propertyMap.has(predLabel)) {
+                    propertyMap.set(predLabel, {
+                        predicate: pred,
+                        claims: []
+                    });
+                }
+
+                // Add this claim
+                propertyMap.get(predLabel).claims.push({
+                    value: obj.value,
+                    datatype: obj.datatype,
+                    graph: graph,
+                    graphLabel: this.extractLabel(graph),
+                    source: row.source?.value,
+                    sourceLabel: row.source ? this.extractLabel(row.source.value) : null,
+                    confidence: row.confidence?.value,
+                    timestamp: row.timestamp?.value
+                });
             });
         }
 
         // Render HTML
         let html = `
             <div class="node-info">
+                <div class="node-label">${label}</div>
                 <div class="node-uri">${uri}</div>
-                ${properties.has('_type') ? `<span class="node-type">${this.extractLabel(properties.get('_type'))}</span>` : ''}
+                ${nodeType ? `<span class="node-type">${nodeType}</span>` : ''}
             </div>
             <div class="properties-section">
-                <h4>Data Properties</h4>
+                <h4>Data Properties <span class="claims-badge">with competing claims</span></h4>
         `;
 
-        properties.forEach((prop, name) => {
-            if (name === '_type') return;
-
-            const hasProvenance = prop.provenance && prop.provenance.length > 0;
+        propertyMap.forEach((propData, name) => {
+            const claims = propData.claims;
+            const uniqueValues = [...new Set(claims.map(c => c.value))];
+            const hasConflict = uniqueValues.length > 1;
 
             html += `
-                <div class="property-item ${hasProvenance ? 'has-provenance' : ''}">
+                <div class="property-item has-provenance ${hasConflict ? 'has-conflict' : ''}">
                     <div class="property-header" onclick="sparqlClient.toggleProperty(this)">
-                        <div>
-                            <div class="property-name">${name}</div>
-                            <div class="property-value">${prop.value}</div>
+                        <div class="property-main">
+                            <div class="property-name">
+                                ${name}
+                                ${hasConflict ? '<span class="conflict-indicator" title="Multiple different values found">⚠</span>' : ''}
+                            </div>
+                            <div class="property-value-summary">
+                                ${uniqueValues.length} value${uniqueValues.length > 1 ? 's' : ''}
+                                from ${claims.length} claim${claims.length > 1 ? 's' : ''}
+                            </div>
                         </div>
-                        ${hasProvenance ? '<span class="property-expand-icon">▼</span>' : ''}
+                        <span class="property-expand-icon">▼</span>
                     </div>
-                    ${hasProvenance ? this.renderProvenancePanel(prop.provenance) : ''}
+                    <div class="claims-panel">
+                        ${this.renderClaimsPanel(claims, hasConflict)}
+                    </div>
                 </div>
             `;
         });
 
         html += '</div>';
-
-        // Object Properties section
-        html += `
-            <div class="properties-section" style="margin-top: 20px;">
-                <h4>Relationships</h4>
-                <p style="color: var(--text-secondary); font-size: 12px;">
-                    Select connected nodes in the graph view to explore relationships.
-                </p>
-            </div>
-        `;
-
         content.innerHTML = html;
     }
 
-    renderProvenancePanel(provenance) {
-        // Deduplicate provenance entries
-        const unique = [];
-        const seen = new Set();
-        provenance.forEach(p => {
-            const key = `${p.source}-${p.timestamp}`;
-            if (!seen.has(key)) {
-                seen.add(key);
-                unique.push(p);
+    /**
+     * Render all claims for a property with full provenance
+     */
+    renderClaimsPanel(claims, hasConflict) {
+        // Group claims by value
+        const valueGroups = new Map();
+        claims.forEach(claim => {
+            if (!valueGroups.has(claim.value)) {
+                valueGroups.set(claim.value, []);
             }
+            valueGroups.get(claim.value).push(claim);
         });
 
-        let html = '<div class="provenance-panel">';
+        let html = '<div class="claims-container">';
 
-        unique.forEach(p => {
+        valueGroups.forEach((claimsForValue, value) => {
+            const isLatest = claimsForValue.some(c => c.graphLabel && c.graphLabel.includes('2026-02-17'));
+
             html += `
-                <div class="provenance-item">
-                    <div class="provenance-icon source">⬢</div>
-                    <div class="provenance-details">
-                        <div class="provenance-label">Source</div>
-                        <div class="provenance-value">${this.extractLabel(p.source)}</div>
+                <div class="claim-group ${isLatest ? 'latest' : 'historical'}">
+                    <div class="claim-value">
+                        <span class="value-badge ${hasConflict ? 'conflict' : ''}">${value}</span>
+                        ${isLatest ? '<span class="latest-badge">CURRENT</span>' : '<span class="historical-badge">HISTORICAL</span>'}
+                    </div>
+                    <div class="claim-sources">
+            `;
+
+            claimsForValue.forEach(claim => {
+                html += `
+                    <div class="claim-source">
+                        <div class="source-row">
+                            <span class="source-icon">📊</span>
+                            <span class="source-label">Batch:</span>
+                            <span class="source-value">${claim.graphLabel || 'Unknown'}</span>
+                        </div>
+                        ${claim.sourceLabel ? `
+                        <div class="source-row">
+                            <span class="source-icon">🏢</span>
+                            <span class="source-label">Source:</span>
+                            <span class="source-value">${claim.sourceLabel}</span>
+                        </div>
+                        ` : ''}
+                        ${claim.confidence ? `
+                        <div class="source-row">
+                            <span class="source-icon">📈</span>
+                            <span class="source-label">Confidence:</span>
+                            <span class="source-value confidence-bar">
+                                <span class="confidence-fill" style="width: ${parseFloat(claim.confidence) * 100}%"></span>
+                                <span class="confidence-text">${(parseFloat(claim.confidence) * 100).toFixed(0)}%</span>
+                            </span>
+                        </div>
+                        ` : ''}
+                        ${claim.timestamp ? `
+                        <div class="source-row">
+                            <span class="source-icon">🕐</span>
+                            <span class="source-label">Timestamp:</span>
+                            <span class="source-value">${new Date(claim.timestamp).toLocaleString()}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            html += `
                     </div>
                 </div>
             `;
-
-            if (p.confidence) {
-                html += `
-                    <div class="provenance-item">
-                        <div class="provenance-icon confidence">◉</div>
-                        <div class="provenance-details">
-                            <div class="provenance-label">Confidence</div>
-                            <div class="provenance-value">${(parseFloat(p.confidence) * 100).toFixed(0)}%</div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            if (p.timestamp) {
-                html += `
-                    <div class="provenance-item">
-                        <div class="provenance-icon timestamp">◷</div>
-                        <div class="provenance-details">
-                            <div class="provenance-label">Timestamp</div>
-                            <div class="provenance-value">${new Date(p.timestamp).toLocaleString()}</div>
-                        </div>
-                    </div>
-                `;
-            }
         });
 
         html += '</div>';
@@ -761,7 +1026,6 @@ ORDER BY ?predicate`;
     }
 
     showError(message) {
-        // Could implement a toast notification here
         console.error(message);
         alert('Error: ' + message);
     }
