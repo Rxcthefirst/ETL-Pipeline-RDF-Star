@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARQL Client - Knowledge Graph Explorer</title>
+    <link rel="stylesheet" href="/static/css/sparql-client.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                </svg>
+                Knowledge Graph Explorer
+            </h1>
+            <div class="header-actions">
+                <span style="color: var(--text-secondary); font-size: 13px;">
+                    Connected to: <strong style="color: var(--accent);">localhost:7878</strong>
+                </span>
+            </div>
+        </header>
+
+        <!-- Query Editor Section -->
+        <section class="query-section">
+            <div class="query-editor-container">
+                <div class="query-editor">
+                    <textarea id="query-input" placeholder="Enter your SPARQL query here...
+
+Example:
+SELECT ?customer ?name ?score
+FROM <http://example.org/batch/2026-02-17T10:00:00Z>
+WHERE {
+    ?customer a <http://schema.org/Person> ;
+              <http://xmlns.com/foaf/0.1/name> ?name ;
+              <http://schema.org/creditScore> ?score .
+}"></textarea>
+                </div>
+                <div class="query-actions">
+                    <button class="btn btn-primary" id="run-query">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        Run
+                    </button>
+                    <button class="btn btn-secondary" id="clear-query">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                        Clear
+                    </button>
+                </div>
+            </div>
+            <div class="query-templates">
+                <select id="query-templates">
+                    <option value="">-- Select a query template --</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Results Panel -->
+            <div class="results-panel">
+                <!-- Tabs -->
+                <div class="tabs">
+                    <div class="tab active" data-tab="graph">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="6" cy="6" r="3"/>
+                            <circle cx="18" cy="6" r="3"/>
+                            <circle cx="12" cy="18" r="3"/>
+                            <line x1="6" y1="9" x2="12" y2="15" stroke="currentColor" stroke-width="2"/>
+                            <line x1="18" y1="9" x2="12" y2="15" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Graph
+                    </div>
+                    <div class="tab" data-tab="table">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h2v2H7V7zm4 0h6v2h-6V7zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2zm-4 4h2v2H7v-2zm4 0h6v2h-6v-2z"/>
+                        </svg>
+                        Table
+                    </div>
+                    <div class="tab" data-tab="json">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+                        </svg>
+                        JSON
+                    </div>
+                </div>
+
+                <!-- Tab Contents -->
+                <div id="graph-content" class="tab-content active">
+                    <div id="graph-container">
+                        <svg id="graph-canvas"></svg>
+                        <div class="graph-controls">
+                            <button id="zoom-in" title="Zoom In">+</button>
+                            <button id="zoom-out" title="Zoom Out">−</button>
+                            <button id="zoom-fit" title="Fit to View">⊙</button>
+                        </div>
+                        <div class="loading-overlay hidden">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="table-content" class="tab-content">
+                    <div id="table-container">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/>
+                            </svg>
+                            <h3>No Results Yet</h3>
+                            <p>Run a SPARQL query to see tabular results here.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="json-content" class="tab-content">
+                    <div id="json-container">
+                        <pre id="json-output">// JSON response will appear here after running a query</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Panel (Right Side) -->
+            <aside class="details-panel collapsed">
+                <div class="details-header">
+                    <h3>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                        </svg>
+                        Node Details
+                    </h3>
+                    <button id="close-details" class="btn btn-secondary" style="padding: 5px 10px;">
+                        ✕
+                    </button>
+                </div>
+                <div class="details-content">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        <h3>Select a Node</h3>
+                        <p>Click on a node in the graph or a URI in the table to see its properties and provenance.</p>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-item">
+                <span class="status-indicator"></span>
+                <span class="status-text">Ready</span>
+            </div>
+            <div class="status-item">
+                <span>Press Ctrl+Enter to run query</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/js/sparql-client.js"></script>
+</body>
+</html>
+

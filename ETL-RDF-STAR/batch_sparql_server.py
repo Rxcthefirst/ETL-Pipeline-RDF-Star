@@ -23,10 +23,16 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Request, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import uvicorn
 from pyoxigraph import Store, RdfFormat
+import os
+
+# Get the directory of this script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI(
     title="Batch SPARQL Endpoint",
@@ -41,6 +47,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+
+# Setup templates
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # Global state
 store: Optional[Store] = None
@@ -112,8 +124,14 @@ def initialize_store(file_path: str):
 
 
 @app.get("/", response_class=HTMLResponse)
-async def home():
-    """Home page with API information."""
+async def home(request: Request):
+    """Serve the interactive SPARQL client."""
+    return templates.TemplateResponse("sparql_client.html", {"request": request})
+
+
+@app.get("/info", response_class=HTMLResponse)
+async def info():
+    """Server information page."""
     graphs_html = "".join([f"<li><code>{g}</code></li>" for g in load_stats.get('graphs', [])])
 
     return f"""
