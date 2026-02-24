@@ -1,0 +1,185 @@
+/* Class Explorer Mode Layout */
+
+#class-explorer-mode {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    width: 100%;
+}
+
+#class-explorer-mode > div:first-child {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+/* Search section */
+#class-explorer-mode .query-section {
+    flex: 0 0 auto;
+}
+
+#class-explorer-mode .query-editor-container {
+    display: flex;
+    align-items: center;
+}
+
+#class-search-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-darker);
+    color: var(--text-primary);
+    outline: none;
+}
+
+#class-search-input:focus {
+    border-color: var(--accent);
+}
+
+#class-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    z-index: 1000;
+}
+
+/* Results panel fills remaining space */
+#class-explorer-mode .results-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Graph container fills its tab content */
+#ce-graph-content {
+    flex: 1;
+    overflow: hidden;
+    display: none;
+}
+
+#ce-graph-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+#ce-graph-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    min-height: 0;
+    background: var(--bg-panel);
+}
+
+#ce-graph-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Table content */
+#ce-table-content {
+    flex: 1;
+    overflow: hidden;
+    display: none;
+}
+
+#ce-table-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+#ce-table-container {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+}
+
+/* JSON content */
+#ce-json-content {
+    flex: 1;
+    overflow: hidden;
+    display: none;
+}
+
+#ce-json-content.active {
+    display: flex;
+    flex-direction: column;
+}
+
+#ce-json-container {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+}
+
+#ce-json-output {
+    background: var(--bg-panel);
+    border-radius: 6px;
+    padding: 15px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+}
+
+/* Details panel */
+#ce-details-panel {
+    width: 380px;
+    min-width: 380px;
+    background: var(--bg-darker);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.3s, min-width 0.3s;
+    border-left: 1px solid var(--border-color);
+}
+
+#ce-details-panel.collapsed {
+    width: 0;
+    min-width: 0;
+    border-left: none;
+}
+
+/* Context menu hover */
+.ce-ctx-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Search result item hover */
+.ce-search-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* RDF-Star Annotation Accordion */
+.ce-annotation-accordion {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-out;
+}
+
+.ce-annotation-accordion.open {
+    max-height: 400px;
+    transition: max-height 0.35s ease-in;
+}
+
+.ce-annotation-body {
+    padding: 8px 12px 10px;
+    background: rgba(52, 152, 219, 0.05);
+    border-top: 1px solid rgba(52, 152, 219, 0.15);
+}
+
+

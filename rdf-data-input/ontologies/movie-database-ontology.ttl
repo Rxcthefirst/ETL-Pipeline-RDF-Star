@@ -1,0 +1,479 @@
+@prefix ex: <http://example.org/movieApp#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+################################################################
+# Ontology Header
+################################################################
+
+ex:MovieAppOntology a owl:Ontology ;
+    rdfs:label "Movie Application Ontology" ;
+    dct:creator "Data Governance Team" ;
+    dct:created "2024-06-01"^^xsd:date ;
+    dct:description "Ontology for a movie review and rating application." ;
+    owl:versionInfo "2.0" .
+
+################################################################
+# Annotation Properties (governance metadata)
+################################################################
+
+ex:governanceSource a owl:AnnotationProperty ;
+    rdfs:label "governance source" ;
+    rdfs:comment "The system or authority that asserts this fact." ;
+    rdfs:range xsd:string .
+
+ex:confidence a owl:AnnotationProperty ;
+    rdfs:label "confidence" ;
+    rdfs:comment "Confidence score for this assertion (0.0 to 1.0)." ;
+    rdfs:range xsd:decimal .
+
+ex:annotatedAt a owl:AnnotationProperty ;
+    rdfs:label "annotated at" ;
+    rdfs:comment "Timestamp when this assertion was recorded." ;
+    rdfs:range xsd:dateTime .
+
+ex:curatedBy a owl:AnnotationProperty ;
+    rdfs:label "curated by" ;
+    rdfs:comment "Person or team who curated this information." ;
+    rdfs:range xsd:string .
+
+ex:definedByOntology a owl:AnnotationProperty ;
+    rdfs:label "defined by ontology" ;
+    rdfs:comment "The ontology that defines this property or class." .
+
+################################################################
+# Classes
+################################################################
+
+ex:User a owl:Class ;
+    rdfs:label "User" ;
+    rdfs:comment "A registered user of the movie application." .
+
+ex:Movie a owl:Class ;
+    rdfs:label "Movie" ;
+    rdfs:comment "A feature film in the database." .
+
+ex:Post a owl:Class ;
+    rdfs:label "Post" ;
+    rdfs:comment "User-generated content (abstract — use Review or Comment)." .
+
+ex:Review a owl:Class ;
+    rdfs:label "Review" ;
+    rdfs:comment "An in-depth review of a specific movie, with a headline and star rating." ;
+    rdfs:subClassOf ex:Post .
+
+ex:Comment a owl:Class ;
+    rdfs:label "Comment" ;
+    rdfs:comment "A reply posted in response to a review." ;
+    rdfs:subClassOf ex:Post .
+
+ex:Rating a owl:Class ;
+    rdfs:label "Rating" ;
+    rdfs:comment "A numeric rating a user gives to a movie." .
+
+################################################################
+# Disjoint Classes
+################################################################
+
+# Top-level classes are mutually exclusive
+[ a owl:AllDisjointClasses ;
+  owl:members (ex:User ex:Movie ex:Post ex:Rating)
+] .
+
+# Review and Comment are mutually exclusive subtypes of Post
+[ a owl:AllDisjointClasses ;
+  owl:members (ex:Review ex:Comment)
+] .
+
+################################################################
+# Object Properties
+################################################################
+
+ex:hasPosted a owl:ObjectProperty ;
+    rdfs:label "has posted" ;
+    rdfs:domain ex:User ;
+    rdfs:range ex:Post ;
+    owl:inverseOf ex:isPostedBy .
+
+ex:isPostedBy a owl:ObjectProperty, owl:FunctionalProperty, owl:AsymmetricProperty, owl:IrreflexiveProperty ;
+    rdfs:label "is posted by" ;
+    rdfs:domain ex:Post ;
+    rdfs:range ex:User .
+
+ex:hasRating a owl:ObjectProperty ;
+    rdfs:label "has rating" ;
+    rdfs:domain ex:User ;
+    rdfs:range ex:Rating .
+
+ex:ratesMovie a owl:ObjectProperty, owl:FunctionalProperty ;
+    rdfs:label "rates movie" ;
+    rdfs:domain ex:Rating ;
+    rdfs:range ex:Movie .
+
+# Review-specific: a review is about a specific movie
+ex:reviewsMovie a owl:ObjectProperty, owl:FunctionalProperty, owl:AsymmetricProperty ;
+    rdfs:label "reviews movie" ;
+    rdfs:domain ex:Review ;
+    rdfs:range ex:Movie .
+
+# Comment-specific: a comment is in reply to a review
+ex:repliesTo a owl:ObjectProperty, owl:AsymmetricProperty, owl:IrreflexiveProperty ;
+    rdfs:label "replies to" ;
+    rdfs:domain ex:Comment ;
+    rdfs:range ex:Review .
+
+# Inverse: a review has replies
+ex:hasReply a owl:ObjectProperty ;
+    rdfs:label "has reply" ;
+    rdfs:domain ex:Review ;
+    rdfs:range ex:Comment ;
+    owl:inverseOf ex:repliesTo .
+
+# A user follows another user (social)
+ex:follows a owl:ObjectProperty, owl:IrreflexiveProperty ;
+    rdfs:label "follows" ;
+    rdfs:domain ex:User ;
+    rdfs:range ex:User .
+
+################################################################
+# Data Properties
+################################################################
+
+ex:hasEmail a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:label "has email" ;
+    rdfs:domain ex:User ;
+    rdfs:range xsd:string .
+
+ex:hasUsername a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:label "has username" ;
+    rdfs:domain ex:User ;
+    rdfs:range xsd:string .
+
+ex:hasTitle a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:label "has title" ;
+    rdfs:domain ex:Movie ;
+    rdfs:range xsd:string .
+
+ex:hasYear a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:label "has year" ;
+    rdfs:domain ex:Movie ;
+    rdfs:range xsd:integer .
+
+ex:hasGenre a owl:DatatypeProperty ;
+    rdfs:label "has genre" ;
+    rdfs:domain ex:Movie ;
+    rdfs:range xsd:string .
+
+ex:hasContent a owl:DatatypeProperty ;
+    rdfs:label "has content" ;
+    rdfs:domain ex:Post ;
+    rdfs:range xsd:string .
+
+ex:hasTimestamp a owl:DatatypeProperty ;
+    rdfs:label "has timestamp" ;
+    rdfs:domain ex:Post ;
+    rdfs:range xsd:dateTime .
+
+ex:hasRatingValue a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:label "has rating value" ;
+    rdfs:domain ex:Rating ;
+    rdfs:range xsd:integer .
+
+# Review-specific data properties
+ex:hasHeadline a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:label "has headline" ;
+    rdfs:comment "Short summary title for a review." ;
+    rdfs:domain ex:Review ;
+    rdfs:range xsd:string .
+
+ex:hasStarRating a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:label "has star rating" ;
+    rdfs:comment "Star rating from 1 to 5 given in a review." ;
+    rdfs:domain ex:Review ;
+    rdfs:range xsd:integer .
+
+ex:hasSpoilerWarning a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:label "has spoiler warning" ;
+    rdfs:comment "Whether this review contains spoilers." ;
+    rdfs:domain ex:Review ;
+    rdfs:range xsd:boolean .
+
+# Comment-specific data properties
+ex:hasUpvotes a owl:DatatypeProperty ;
+    rdfs:label "has upvotes" ;
+    rdfs:comment "Number of upvotes on a comment." ;
+    rdfs:domain ex:Comment ;
+    rdfs:range xsd:nonNegativeInteger .
+
+ex:isEdited a owl:DatatypeProperty, owl:FunctionalProperty ;
+    rdfs:label "is edited" ;
+    rdfs:comment "Whether this comment has been edited after posting." ;
+    rdfs:domain ex:Comment ;
+    rdfs:range xsd:boolean .
+
+################################################################
+# Disjoint Properties
+################################################################
+
+# hasHeadline and hasContent serve different roles on a Review
+[ a owl:AllDisjointProperties ;
+  owl:members (ex:hasHeadline ex:hasContent)
+] .
+
+################################################################
+# RDF-Star: Ontology Property Provenance
+# Annotate property definitions with their source ontology
+################################################################
+
+<< ex:hasPosted a owl:ObjectProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:isPostedBy a owl:ObjectProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:hasRating a owl:ObjectProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:ratesMovie a owl:ObjectProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:hasEmail a owl:DatatypeProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:hasUsername a owl:DatatypeProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:hasTitle a owl:DatatypeProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:hasRatingValue a owl:DatatypeProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:reviewsMovie a owl:ObjectProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:repliesTo a owl:ObjectProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:hasHeadline a owl:DatatypeProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:hasStarRating a owl:DatatypeProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+<< ex:hasSpoilerWarning a owl:DatatypeProperty >> ex:definedByOntology ex:MovieAppOntology ;
+    ex:curatedBy "Data Governance Team" ;
+    ex:annotatedAt "2024-06-01T00:00:00"^^xsd:dateTime .
+
+################################################################
+# Class Restrictions & Cardinality
+################################################################
+
+# --- User ---
+# Must have exactly one email (pattern-restricted)
+ex:User rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasEmail ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:string ;
+        owl:withRestrictions (
+            [ xsd:pattern ".+@.+\\..+" ]
+        )
+    ]
+] .
+
+# Must have exactly one username
+ex:User rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasUsername ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:string
+] .
+
+# A user can have zero or more posts (no upper limit)
+ex:User rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasPosted ;
+    owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+    owl:onClass ex:Post
+] .
+
+# A user can have zero or more ratings
+ex:User rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasRating ;
+    owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+    owl:onClass ex:Rating
+] .
+
+# --- Movie ---
+# Must have exactly one title
+ex:Movie rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasTitle ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:string
+] .
+
+# Must have exactly one year
+ex:Movie rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasYear ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:integer
+] .
+
+# Can have one or more genres
+ex:Movie rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasGenre ;
+    owl:minQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:string
+] .
+
+# --- Post (abstract) ---
+# Must be created by exactly one User
+ex:Post rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:isPostedBy ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onClass ex:User
+] .
+
+# Must have exactly one timestamp
+ex:Post rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasTimestamp ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:dateTime
+] .
+
+# Must have exactly one content body
+ex:Post rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasContent ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:string
+] .
+
+# --- Review (extends Post) ---
+# Must review exactly one movie
+ex:Review rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:reviewsMovie ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onClass ex:Movie
+] .
+
+# Must have exactly one headline
+ex:Review rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasHeadline ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:string
+] .
+
+# Must have exactly one star rating between 1 and 5
+ex:Review rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasStarRating ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "1"^^xsd:integer ]
+            [ xsd:maxInclusive "5"^^xsd:integer ]
+        )
+    ]
+] .
+
+# Must have exactly one spoiler flag
+ex:Review rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasSpoilerWarning ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:boolean
+] .
+
+# Can have zero or more replies
+ex:Review rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasReply ;
+    owl:minQualifiedCardinality "0"^^xsd:nonNegativeInteger ;
+    owl:onClass ex:Comment
+] .
+
+# --- Comment (extends Post) ---
+# Must reply to exactly one review
+ex:Comment rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:repliesTo ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onClass ex:Review
+] .
+
+# Has zero or one upvote count
+ex:Comment rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasUpvotes ;
+    owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:nonNegativeInteger
+] .
+
+# Has exactly one edited flag
+ex:Comment rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:isEdited ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange xsd:boolean
+] .
+
+# --- Rating ---
+# Must rate exactly one movie
+ex:Rating rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:ratesMovie ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onClass ex:Movie
+] .
+
+# Must be posted by exactly one user
+ex:Rating rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:isPostedBy ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onClass ex:User
+] .
+
+# Rating value must be between 1 and 10
+ex:Rating rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty ex:hasRatingValue ;
+    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+    owl:onDataRange [
+        a rdfs:Datatype ;
+        owl:onDatatype xsd:integer ;
+        owl:withRestrictions (
+            [ xsd:minInclusive "1"^^xsd:integer ]
+            [ xsd:maxInclusive "10"^^xsd:integer ]
+        )
+    ]
+] .

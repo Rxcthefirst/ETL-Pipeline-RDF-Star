@@ -1,0 +1,399 @@
+@prefix ex: <http://example.org/movieApp#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+################################################################
+# Users
+################################################################
+
+ex:user_alice a ex:User ;
+    rdfs:label "Alice" ;
+    ex:hasUsername "alice92" ;
+    ex:hasEmail "alice92@example.com" .
+
+<< ex:user_alice ex:hasUsername "alice92" >>
+    ex:governanceSource "UserRegistrationSystem" ;
+    ex:confidence "0.99"^^xsd:decimal ;
+    ex:annotatedAt "2025-01-15T08:00:00"^^xsd:dateTime .
+
+<< ex:user_alice ex:hasEmail "alice92@example.com" >>
+    ex:governanceSource "UserRegistrationSystem" ;
+    ex:confidence "0.99"^^xsd:decimal ;
+    ex:annotatedAt "2025-01-15T08:00:00"^^xsd:dateTime ;
+    ex:curatedBy "Identity Verification Team" .
+
+ex:user_bob a ex:User ;
+    rdfs:label "Bob" ;
+    ex:hasUsername "bob_reviews" ;
+    ex:hasEmail "bob@movies.net" .
+
+<< ex:user_bob ex:hasUsername "bob_reviews" >>
+    ex:governanceSource "UserRegistrationSystem" ;
+    ex:confidence "0.95"^^xsd:decimal ;
+    ex:annotatedAt "2025-02-01T12:00:00"^^xsd:dateTime .
+
+<< ex:user_bob ex:hasEmail "bob@movies.net" >>
+    ex:governanceSource "UserRegistrationSystem" ;
+    ex:confidence "0.95"^^xsd:decimal ;
+    ex:annotatedAt "2025-02-01T12:00:00"^^xsd:dateTime .
+
+ex:user_carol a ex:User ;
+    rdfs:label "Carol" ;
+    ex:hasUsername "carol_cinephile" ;
+    ex:hasEmail "carol@filmfan.org" .
+
+<< ex:user_carol ex:hasEmail "carol@filmfan.org" >>
+    ex:governanceSource "UserRegistrationSystem" ;
+    ex:confidence "0.97"^^xsd:decimal ;
+    ex:annotatedAt "2025-02-10T09:30:00"^^xsd:dateTime .
+
+ex:user_dave a ex:User ;
+    rdfs:label "Dave" ;
+    ex:hasUsername "dave_d" ;
+    ex:hasEmail "dave@example.com" .
+
+ex:user_eve a ex:User ;
+    rdfs:label "Eve" ;
+    ex:hasUsername "eve_watches" ;
+    ex:hasEmail "eve@screentime.io" .
+
+<< ex:user_eve ex:hasEmail "eve@screentime.io" >>
+    ex:governanceSource "OAuth2Provider" ;
+    ex:confidence "0.92"^^xsd:decimal ;
+    ex:annotatedAt "2025-03-01T14:00:00"^^xsd:dateTime ;
+    ex:curatedBy "Identity Verification Team" .
+
+################################################################
+# Movies
+################################################################
+
+ex:movie_inception a ex:Movie ;
+    rdfs:label "Inception" ;
+    ex:hasTitle "Inception" ;
+    ex:hasYear "2010"^^xsd:integer ;
+    ex:hasGenre "Sci-Fi" .
+
+<< ex:movie_inception ex:hasTitle "Inception" >>
+    ex:governanceSource "TMDb API" ;
+    ex:confidence "1.0"^^xsd:decimal ;
+    ex:annotatedAt "2025-01-10T00:00:00"^^xsd:dateTime .
+
+<< ex:movie_inception ex:hasYear "2010"^^xsd:integer >>
+    ex:governanceSource "TMDb API" ;
+    ex:confidence "1.0"^^xsd:decimal ;
+    ex:annotatedAt "2025-01-10T00:00:00"^^xsd:dateTime .
+
+<< ex:movie_inception ex:hasGenre "Sci-Fi" >>
+    ex:governanceSource "TMDb API" ;
+    ex:confidence "0.88"^^xsd:decimal ;
+    ex:annotatedAt "2025-01-10T00:00:00"^^xsd:dateTime ;
+    ex:curatedBy "Content Curation Team" .
+
+ex:movie_the_matrix a ex:Movie ;
+    rdfs:label "The Matrix" ;
+    ex:hasTitle "The Matrix" ;
+    ex:hasYear "1999"^^xsd:integer ;
+    ex:hasGenre "Sci-Fi" .
+
+<< ex:movie_the_matrix ex:hasTitle "The Matrix" >>
+    ex:governanceSource "TMDb API" ;
+    ex:confidence "1.0"^^xsd:decimal ;
+    ex:annotatedAt "2025-01-10T00:00:00"^^xsd:dateTime .
+
+<< ex:movie_the_matrix ex:hasYear "1999"^^xsd:integer >>
+    ex:governanceSource "IMDb Cross-Reference" ;
+    ex:confidence "1.0"^^xsd:decimal ;
+    ex:annotatedAt "2025-01-11T00:00:00"^^xsd:dateTime .
+
+ex:movie_parasite a ex:Movie ;
+    rdfs:label "Parasite" ;
+    ex:hasTitle "Parasite" ;
+    ex:hasYear "2019"^^xsd:integer ;
+    ex:hasGenre "Thriller" .
+
+<< ex:movie_parasite ex:hasGenre "Thriller" >>
+    ex:governanceSource "TMDb API" ;
+    ex:confidence "0.82"^^xsd:decimal ;
+    ex:annotatedAt "2025-01-12T00:00:00"^^xsd:dateTime ;
+    ex:curatedBy "Content Curation Team" .
+
+ex:movie_interstellar a ex:Movie ;
+    rdfs:label "Interstellar" ;
+    ex:hasTitle "Interstellar" ;
+    ex:hasYear "2014"^^xsd:integer ;
+    ex:hasGenre "Sci-Fi" .
+
+ex:movie_spirited_away a ex:Movie ;
+    rdfs:label "Spirited Away" ;
+    ex:hasTitle "Spirited Away" ;
+    ex:hasYear "2001"^^xsd:integer ;
+    ex:hasGenre "Animation" .
+
+ex:movie_the_godfather a ex:Movie ;
+    rdfs:label "The Godfather" ;
+    ex:hasTitle "The Godfather" ;
+    ex:hasYear "1972"^^xsd:integer ;
+    ex:hasGenre "Crime" .
+
+ex:movie_pulp_fiction a ex:Movie ;
+    rdfs:label "Pulp Fiction" ;
+    ex:hasTitle "Pulp Fiction" ;
+    ex:hasYear "1994"^^xsd:integer ;
+    ex:hasGenre "Crime" .
+
+################################################################
+# Ratings
+################################################################
+
+ex:rating_alice_inception a ex:Rating ;
+    rdfs:label "Alice rates Inception" ;
+    ex:hasRatingValue "9"^^xsd:integer ;
+    ex:ratesMovie ex:movie_inception ;
+    ex:isPostedBy ex:user_alice .
+
+<< ex:rating_alice_inception ex:hasRatingValue "9"^^xsd:integer >>
+    ex:governanceSource "RatingIngestionPipeline" ;
+    ex:confidence "1.0"^^xsd:decimal ;
+    ex:annotatedAt "2025-03-15T10:30:00"^^xsd:dateTime .
+
+<< ex:rating_alice_inception ex:ratesMovie ex:movie_inception >>
+    ex:governanceSource "RatingIngestionPipeline" ;
+    ex:confidence "1.0"^^xsd:decimal ;
+    ex:annotatedAt "2025-03-15T10:30:00"^^xsd:dateTime .
+
+<< ex:rating_alice_inception ex:isPostedBy ex:user_alice >>
+    ex:governanceSource "SessionAuthService" ;
+    ex:confidence "0.98"^^xsd:decimal ;
+    ex:annotatedAt "2025-03-15T10:30:00"^^xsd:dateTime .
+
+ex:rating_alice_matrix a ex:Rating ;
+    rdfs:label "Alice rates The Matrix" ;
+    ex:hasRatingValue "8"^^xsd:integer ;
+    ex:ratesMovie ex:movie_the_matrix ;
+    ex:isPostedBy ex:user_alice .
+
+ex:rating_bob_parasite a ex:Rating ;
+    rdfs:label "Bob rates Parasite" ;
+    ex:hasRatingValue "10"^^xsd:integer ;
+    ex:ratesMovie ex:movie_parasite ;
+    ex:isPostedBy ex:user_bob .
+
+<< ex:rating_bob_parasite ex:hasRatingValue "10"^^xsd:integer >>
+    ex:governanceSource "RatingIngestionPipeline" ;
+    ex:confidence "1.0"^^xsd:decimal ;
+    ex:annotatedAt "2025-04-02T14:15:00"^^xsd:dateTime .
+
+<< ex:rating_bob_parasite ex:ratesMovie ex:movie_parasite >>
+    ex:governanceSource "RatingIngestionPipeline" ;
+    ex:confidence "1.0"^^xsd:decimal ;
+    ex:annotatedAt "2025-04-02T14:15:00"^^xsd:dateTime .
+
+ex:rating_bob_inception a ex:Rating ;
+    rdfs:label "Bob rates Inception" ;
+    ex:hasRatingValue "7"^^xsd:integer ;
+    ex:ratesMovie ex:movie_inception ;
+    ex:isPostedBy ex:user_bob .
+
+ex:rating_carol_interstellar a ex:Rating ;
+    rdfs:label "Carol rates Interstellar" ;
+    ex:hasRatingValue "10"^^xsd:integer ;
+    ex:ratesMovie ex:movie_interstellar ;
+    ex:isPostedBy ex:user_carol .
+
+ex:rating_carol_spirited_away a ex:Rating ;
+    rdfs:label "Carol rates Spirited Away" ;
+    ex:hasRatingValue "9"^^xsd:integer ;
+    ex:ratesMovie ex:movie_spirited_away ;
+    ex:isPostedBy ex:user_carol .
+
+ex:rating_dave_godfather a ex:Rating ;
+    rdfs:label "Dave rates The Godfather" ;
+    ex:hasRatingValue "10"^^xsd:integer ;
+    ex:ratesMovie ex:movie_the_godfather ;
+    ex:isPostedBy ex:user_dave .
+
+<< ex:rating_dave_godfather ex:ratesMovie ex:movie_the_godfather >>
+    ex:governanceSource "RatingIngestionPipeline" ;
+    ex:confidence "1.0"^^xsd:decimal ;
+    ex:annotatedAt "2025-05-01T18:45:00"^^xsd:dateTime .
+
+ex:rating_dave_pulp_fiction a ex:Rating ;
+    rdfs:label "Dave rates Pulp Fiction" ;
+    ex:hasRatingValue "8"^^xsd:integer ;
+    ex:ratesMovie ex:movie_pulp_fiction ;
+    ex:isPostedBy ex:user_dave .
+
+ex:rating_eve_matrix a ex:Rating ;
+    rdfs:label "Eve rates The Matrix" ;
+    ex:hasRatingValue "10"^^xsd:integer ;
+    ex:ratesMovie ex:movie_the_matrix ;
+    ex:isPostedBy ex:user_eve .
+
+<< ex:rating_eve_matrix ex:isPostedBy ex:user_eve >>
+    ex:governanceSource "SessionAuthService" ;
+    ex:confidence "0.96"^^xsd:decimal ;
+    ex:annotatedAt "2025-05-12T11:20:00"^^xsd:dateTime .
+
+ex:rating_eve_parasite a ex:Rating ;
+    rdfs:label "Eve rates Parasite" ;
+    ex:hasRatingValue "8"^^xsd:integer ;
+    ex:ratesMovie ex:movie_parasite ;
+    ex:isPostedBy ex:user_eve .
+
+################################################################
+# Reviews (subclass of Post)
+################################################################
+
+ex:review_alice_inception a ex:Review ;
+    rdfs:label "Alice's review of Inception" ;
+    ex:hasContent "A mind-bending masterpiece that rewards multiple viewings." ;
+    ex:hasTimestamp "2025-03-15T10:30:00"^^xsd:dateTime ;
+    ex:isPostedBy ex:user_alice ;
+    ex:reviewsMovie ex:movie_inception ;
+    ex:hasHeadline "Layers Upon Layers of Brilliance" ;
+    ex:hasStarRating "5"^^xsd:integer ;
+    ex:hasSpoilerWarning "false"^^xsd:boolean .
+
+<< ex:review_alice_inception ex:hasContent "A mind-bending masterpiece that rewards multiple viewings." >>
+    ex:governanceSource "ContentModerationService" ;
+    ex:confidence "0.94"^^xsd:decimal ;
+    ex:annotatedAt "2025-03-15T10:35:00"^^xsd:dateTime ;
+    ex:curatedBy "Auto-Moderation Bot" .
+
+<< ex:review_alice_inception ex:isPostedBy ex:user_alice >>
+    ex:governanceSource "SessionAuthService" ;
+    ex:confidence "0.98"^^xsd:decimal ;
+    ex:annotatedAt "2025-03-15T10:30:00"^^xsd:dateTime .
+
+ex:review_bob_parasite a ex:Review ;
+    rdfs:label "Bob's review of Parasite" ;
+    ex:hasContent "Brilliant social commentary wrapped in a gripping thriller." ;
+    ex:hasTimestamp "2025-04-02T14:15:00"^^xsd:dateTime ;
+    ex:isPostedBy ex:user_bob ;
+    ex:reviewsMovie ex:movie_parasite ;
+    ex:hasHeadline "A Masterclass in Genre-Bending" ;
+    ex:hasStarRating "5"^^xsd:integer ;
+    ex:hasSpoilerWarning "true"^^xsd:boolean .
+
+<< ex:review_bob_parasite ex:isPostedBy ex:user_bob >>
+    ex:governanceSource "SessionAuthService" ;
+    ex:confidence "0.98"^^xsd:decimal ;
+    ex:annotatedAt "2025-04-02T14:15:00"^^xsd:dateTime .
+
+ex:review_carol_interstellar a ex:Review ;
+    rdfs:label "Carol's review of Interstellar" ;
+    ex:hasContent "Visually stunning with a deeply emotional core." ;
+    ex:hasTimestamp "2025-04-10T09:00:00"^^xsd:dateTime ;
+    ex:isPostedBy ex:user_carol ;
+    ex:reviewsMovie ex:movie_interstellar ;
+    ex:hasHeadline "Love Transcends Spacetime" ;
+    ex:hasStarRating "5"^^xsd:integer ;
+    ex:hasSpoilerWarning "true"^^xsd:boolean .
+
+ex:review_dave_godfather a ex:Review ;
+    rdfs:label "Dave's review of The Godfather" ;
+    ex:hasContent "The definitive gangster film. Perfect in every way." ;
+    ex:hasTimestamp "2025-05-01T18:45:00"^^xsd:dateTime ;
+    ex:isPostedBy ex:user_dave ;
+    ex:reviewsMovie ex:movie_the_godfather ;
+    ex:hasHeadline "An Offer You Cannot Refuse" ;
+    ex:hasStarRating "5"^^xsd:integer ;
+    ex:hasSpoilerWarning "false"^^xsd:boolean .
+
+ex:review_eve_matrix a ex:Review ;
+    rdfs:label "Eve's review of The Matrix" ;
+    ex:hasContent "Revolutionary action and philosophy blended seamlessly." ;
+    ex:hasTimestamp "2025-05-12T11:20:00"^^xsd:dateTime ;
+    ex:isPostedBy ex:user_eve ;
+    ex:reviewsMovie ex:movie_the_matrix ;
+    ex:hasHeadline "Welcome to the Desert of the Real" ;
+    ex:hasStarRating "4"^^xsd:integer ;
+    ex:hasSpoilerWarning "false"^^xsd:boolean .
+
+################################################################
+# Comments (subclass of Post)
+################################################################
+
+ex:comment_bob_on_alice_review a ex:Comment ;
+    rdfs:label "Bob comments on Alice's review" ;
+    ex:hasContent "Totally agree, the ending still gets me every time." ;
+    ex:hasTimestamp "2025-03-16T08:00:00"^^xsd:dateTime ;
+    ex:isPostedBy ex:user_bob ;
+    ex:repliesTo ex:review_alice_inception ;
+    ex:hasUpvotes "12"^^xsd:nonNegativeInteger ;
+    ex:isEdited "false"^^xsd:boolean .
+
+ex:comment_carol_on_bob_review a ex:Comment ;
+    rdfs:label "Carol comments on Bob's review" ;
+    ex:hasContent "The staircase scene is unforgettable!" ;
+    ex:hasTimestamp "2025-04-03T16:30:00"^^xsd:dateTime ;
+    ex:isPostedBy ex:user_carol ;
+    ex:repliesTo ex:review_bob_parasite ;
+    ex:hasUpvotes "8"^^xsd:nonNegativeInteger ;
+    ex:isEdited "false"^^xsd:boolean .
+
+ex:comment_eve_on_dave_review a ex:Comment ;
+    rdfs:label "Eve comments on Dave's review" ;
+    ex:hasContent "Could not agree more. A timeless classic." ;
+    ex:hasTimestamp "2025-05-02T20:10:00"^^xsd:dateTime ;
+    ex:isPostedBy ex:user_eve ;
+    ex:repliesTo ex:review_dave_godfather ;
+    ex:hasUpvotes "5"^^xsd:nonNegativeInteger ;
+    ex:isEdited "true"^^xsd:boolean .
+
+ex:comment_alice_on_eve_review a ex:Comment ;
+    rdfs:label "Alice comments on Eve's review" ;
+    ex:hasContent "The bullet-time sequences changed cinema forever." ;
+    ex:hasTimestamp "2025-05-13T07:45:00"^^xsd:dateTime ;
+    ex:isPostedBy ex:user_alice ;
+    ex:repliesTo ex:review_eve_matrix ;
+    ex:hasUpvotes "15"^^xsd:nonNegativeInteger ;
+    ex:isEdited "false"^^xsd:boolean .
+
+################################################################
+# hasPosted links (User -> Post)
+################################################################
+
+ex:user_alice ex:hasPosted ex:review_alice_inception ,
+                           ex:comment_alice_on_eve_review .
+
+ex:user_bob ex:hasPosted ex:review_bob_parasite ,
+                         ex:comment_bob_on_alice_review .
+
+ex:user_carol ex:hasPosted ex:review_carol_interstellar ,
+                           ex:comment_carol_on_bob_review .
+
+ex:user_dave ex:hasPosted ex:review_dave_godfather .
+
+ex:user_eve ex:hasPosted ex:review_eve_matrix ,
+                         ex:comment_eve_on_dave_review .
+
+################################################################
+# hasRating links (User -> Rating)
+################################################################
+
+ex:user_alice ex:hasRating ex:rating_alice_inception ,
+                           ex:rating_alice_matrix .
+
+ex:user_bob ex:hasRating ex:rating_bob_parasite ,
+                         ex:rating_bob_inception .
+
+ex:user_carol ex:hasRating ex:rating_carol_interstellar ,
+                           ex:rating_carol_spirited_away .
+
+ex:user_dave ex:hasRating ex:rating_dave_godfather ,
+                          ex:rating_dave_pulp_fiction .
+
+ex:user_eve ex:hasRating ex:rating_eve_matrix ,
+                         ex:rating_eve_parasite .
+
+################################################################
+# Social follows (User -> User)
+################################################################
+
+ex:user_alice ex:follows ex:user_bob , ex:user_carol .
+ex:user_bob ex:follows ex:user_alice , ex:user_eve .
+ex:user_carol ex:follows ex:user_bob .
+ex:user_eve ex:follows ex:user_alice , ex:user_dave .
+
